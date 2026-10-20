@@ -88,6 +88,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -134,6 +135,7 @@ enum class ToolbarTab(val title: String) {
     SIMULATION("شبیه‌سازی")
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CircuitDesignerScreen(
     viewModel: SimYarViewModel,
@@ -254,773 +256,433 @@ fun CircuitDesignerScreen(
 
         Column(modifier = Modifier.fillMaxSize()) {
             if (!isFullscreenMode) {
-                // نوار بالایی کنترل و پروژه‌ها
+                // ==========================================
+                // ⭐️ نوار بالایی کنترل و پروژه‌ها (فشرده‌شده برای افزایش فضای بوم)
+                // ==========================================
                 Surface(
                     color = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 4.dp,
+                    tonalElevation = 2.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = projectTitle,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp
-                                )
-                                if (isDirty) {
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Surface(
-                                        color = Color(0xFFFF9100).copy(alpha = 0.2f),
-                                        shape = RoundedCornerShape(4.dp),
-                                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFF9100))
+                    Column(modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = projectTitle,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
+                                    if (isDirty) {
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Box(modifier = Modifier.size(6.dp).background(Color(0xFFFF9100), CircleShape))
+                                    }
+                                }
+                            }
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(0.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                IconButton(
+                                    onClick = { showExportDialog = true },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(Icons.Outlined.PictureAsPdf, contentDescription = "خروجی", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                }
+                                IconButton(
+                                    onClick = {
+                                        if (!isVipUnlocked && !viewModel.billingRepository.canCreateNewProject(savedProjects.size)) {
+                                            showVipDialog = true
+                                        } else {
+                                            saveTitleInput = projectTitle
+                                            showSaveDialog = true
+                                        }
+                                    },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(Icons.Outlined.Save, contentDescription = "ذخیره", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                }
+                                IconButton(
+                                    onClick = { showLoadDialog = true },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(Icons.Outlined.FolderOpen, contentDescription = "پروژه‌ها", tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(16.dp))
+                                }
+                                Box {
+                                    IconButton(
+                                        onClick = { showTemplatesMenu = true },
+                                        modifier = Modifier.size(28.dp)
                                     ) {
-                                        Text(
-                                            text = "ذخیره‌نشده",
-                                            color = Color(0xFFFFB74D),
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                        Icon(Icons.Outlined.ElectricalServices, contentDescription = "قالب‌ها", tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(16.dp))
+                                    }
+                                    DropdownMenu(
+                                        expanded = showTemplatesMenu,
+                                        onDismissRequest = { showTemplatesMenu = false },
+                                        modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text("پروژه جدید", fontSize = 12.sp) },
+                                            onClick = { viewModel.newProject(); showTemplatesMenu = false }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("راه‌اندازی مستقیم (DOL)", fontSize = 12.sp) },
+                                            onClick = { viewModel.checkUnsavedChangesBeforeAction { viewModel.loadTemplateDol() }; showTemplatesMenu = false }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("ستاره - مثلث", fontSize = 12.sp) },
+                                            onClick = { viewModel.checkUnsavedChangesBeforeAction { viewModel.loadTemplateStarDelta() }; showTemplatesMenu = false }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("چپگرد / راستگرد", fontSize = 12.sp) },
+                                            onClick = { viewModel.checkUnsavedChangesBeforeAction { viewModel.loadTemplateReverse() }; showTemplatesMenu = false }
                                         )
                                     }
                                 }
                             }
-                            Text(
-                                text = "قطعات: ${PersianUtils.toPersianDigits(components.size)} | سیم‌ها: ${PersianUtils.toPersianDigits(wires.size)}",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 10.sp
-                            )
                         }
 
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // دکمه خروجی نقشه
-                            OutlinedButton(
-                                onClick = { showExportDialog = true },
-                                shape = RoundedCornerShape(6.dp),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                modifier = Modifier
-                                    .testTag("export_project_button")
-                                    .semantics { contentDescription = "خروجی نقشه به صورت PDF و PNG با جدول استاندارد" }
-                            ) {
-                                Icon(Icons.Outlined.PictureAsPdf, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(15.dp))
-                                Spacer(modifier = Modifier.width(3.dp))
-                                Text("خروجی", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                            }
-
-                            // دکمه ذخیره
-                            Button(
-                                onClick = {
-                                    if (!isVipUnlocked && !viewModel.billingRepository.canCreateNewProject(savedProjects.size)) {
-                                        showVipDialog = true
-                                    } else {
-                                        saveTitleInput = projectTitle
-                                        showSaveDialog = true
-                                    }
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                shape = RoundedCornerShape(6.dp),
-                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                modifier = Modifier
-                                    .testTag("save_project_button")
-                                    .semantics { contentDescription = "ذخیره پروژه مدار در پایگاه داده" }
-                            ) {
-                                Icon(Icons.Outlined.Save, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(15.dp))
-                                Spacer(modifier = Modifier.width(3.dp))
-                                Text("ذخیره", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                            }
-
-                            // دکمه بارگذاری
-                            OutlinedButton(
-                                onClick = { showLoadDialog = true },
-                                shape = RoundedCornerShape(6.dp),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary),
-                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                modifier = Modifier
-                                    .testTag("load_project_button")
-                                    .semantics { contentDescription = "بارگذاری و انتخاب پروژه‌های ذخیره شده" }
-                            ) {
-                                Icon(Icons.Outlined.FolderOpen, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(15.dp))
-                                Spacer(modifier = Modifier.width(3.dp))
-                                Text("پروژه‌ها", color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                            }
-
-                            // دکمه قالب‌های آماده صنعتی
-                            Box {
-                                OutlinedButton(
-                                    onClick = { showTemplatesMenu = true },
-                                    shape = RoundedCornerShape(6.dp),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
-                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                    modifier = Modifier.semantics { contentDescription = "قالب‌های آماده مدارات صنعتی استاندارد" }
-                                ) {
-                                    Icon(Icons.Outlined.ElectricalServices, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(15.dp))
-                                    Spacer(modifier = Modifier.width(3.dp))
-                                    Text("قالب‌ها", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                                }
-
-                                DropdownMenu(
-                                    expanded = showTemplatesMenu,
-                                    onDismissRequest = { showTemplatesMenu = false },
-                                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text("ایجاد پروژه جدید (بوم خالی)", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold, fontSize = 12.sp) },
-                                        onClick = {
-                                            viewModel.newProject()
-                                            showTemplatesMenu = false
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("راه‌اندازی مستقیم (DOL) - قدرت و فرمان", color = Color.White, fontSize = 12.sp) },
-                                        onClick = {
-                                            viewModel.checkUnsavedChangesBeforeAction {
-                                                viewModel.loadTemplateDol()
-                                                Toast.makeText(context, "قالب راه‌اندازی مستقیم (DOL) بارگذاری شد", Toast.LENGTH_SHORT).show()
-                                            }
-                                            showTemplatesMenu = false
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("ستاره - مثلث (Star-Delta) با تایمر و اینترلاک", color = Color.White, fontSize = 12.sp) },
-                                        onClick = {
-                                            viewModel.checkUnsavedChangesBeforeAction {
-                                                viewModel.loadTemplateStarDelta()
-                                                Toast.makeText(context, "قالب ستاره - مثلث بارگذاری شد", Toast.LENGTH_SHORT).show()
-                                            }
-                                            showTemplatesMenu = false
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("چپگرد / راستگرد (Forward-Reverse) با اینترلاک", color = Color.White, fontSize = 12.sp) },
-                                        onClick = {
-                                            viewModel.checkUnsavedChangesBeforeAction {
-                                                viewModel.loadTemplateReverse()
-                                                Toast.makeText(context, "قالب چپگرد / راستگرد بارگذاری شد", Toast.LENGTH_SHORT).show()
-                                            }
-                                            showTemplatesMenu = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // بازطراحی نوار ابزار در سه گروه مشخص: ویرایش، نمایش، شبیه‌سازی
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // انتخاب گروه ابزار (Tabs)
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            ToolbarTab.values().forEach { tab ->
-                                val isSelected = activeToolbarTab == tab
-                                Box(
-                                    modifier = Modifier
-                                        .background(
-                                            if (isSelected) Color(0xFF0284C7) else MaterialTheme.colorScheme.surfaceVariant,
-                                            RoundedCornerShape(6.dp)
-                                        )
-                                        .clickable { activeToolbarTab = tab }
-                                        .padding(horizontal = 8.dp, vertical = 3.dp)
-                                        .semantics { contentDescription = "گروه ابزار ${tab.title}" }
-                                ) {
-                                    Text(
-                                        text = tab.title,
-                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        fontSize = 11.sp
-                                    )
-                                }
-                            }
-                        }
-
-                        // نشانگر وضعیت مدار
-                        Text(
-                            text = statusMsg,
-                            color = if (isSimRunning) Color(0xFF00E676) else Color(0xFFFFD600),
-                            fontSize = 11.sp,
-                            maxLines = 2,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(start = 6.dp)
-                        )
-                    }
-
-                    // نوار دکمه‌های ابزار متناسب با گروه انتخابی
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        when (activeToolbarTab) {
-                            ToolbarTab.EDIT -> {
-                                // گروه ۱: ویرایش (Undo / Redo / Copy / Paste / Lock / Rotate / Delete)
-                                Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                                    IconButton(
-                                        onClick = { viewModel.undo() },
-                                        enabled = canUndo,
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .semantics { contentDescription = "بازگردانی آخرین تغییر (Undo)" }
-                                    ) {
-                                        Icon(Icons.Outlined.Undo, contentDescription = null, tint = if (canUndo) Color.White else Color(0xFF475569))
-                                    }
-                                    IconButton(
-                                        onClick = { viewModel.redo() },
-                                        enabled = canRedo,
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .semantics { contentDescription = "انجام مجدد تغییر (Redo)" }
-                                    ) {
-                                        Icon(Icons.Outlined.Redo, contentDescription = null, tint = if (canRedo) Color.White else Color(0xFF475569))
-                                    }
-                                    IconButton(
-                                        onClick = { viewModel.copySelectedComponent() },
-                                        enabled = selectedId != null,
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .semantics { contentDescription = "کپی کردن قطعه انتخاب شده" }
-                                    ) {
-                                        Icon(Icons.Outlined.ContentCopy, contentDescription = null, tint = if (selectedId != null) Color(0xFF00F0FF) else Color(0xFF475569))
-                                    }
-                                    IconButton(
-                                        onClick = { viewModel.pasteComponent() },
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .semantics { contentDescription = "جای‌گذاری قطعه کپی شده (Paste)" }
-                                    ) {
-                                        Icon(Icons.Outlined.ContentPaste, contentDescription = null, tint = Color(0xFF00E676))
-                                    }
-                                    IconButton(
-                                        onClick = { viewModel.rotateSelectedComponent() },
-                                        enabled = selectedId != null,
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .semantics { contentDescription = "چرخش ۹۰ درجه قطعه" }
-                                    ) {
-                                        Icon(Icons.Outlined.RotateRight, contentDescription = null, tint = if (selectedId != null) Color(0xFFFFD600) else Color(0xFF475569))
-                                    }
-                                    IconButton(
-                                        onClick = { viewModel.toggleLockSelectedComponent() },
-                                        enabled = selectedId != null,
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .semantics { contentDescription = if (selectedComponent?.isLocked == true) "باز کردن قفل قطعه" else "قفل کردن موقعیت قطعه" }
-                                    ) {
-                                        Icon(
-                                            imageVector = if (selectedComponent?.isLocked == true) Icons.Outlined.Lock else Icons.Outlined.LockOpen,
-                                            contentDescription = null,
-                                            tint = if (selectedComponent?.isLocked == true) Color(0xFFFF3D00) else Color(0xFFECEFF1)
-                                        )
-                                    }
-                                    IconButton(
-                                        onClick = { viewModel.toggleMultiSelectMode() },
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .semantics { contentDescription = if (isMultiSelectMode) "خروج از حالت انتخاب چندتایی" else "ورود به حالت انتخاب چندتایی" }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.SelectAll,
-                                            contentDescription = null,
-                                            tint = if (isMultiSelectMode) Color(0xFFFF9100) else Color(0xFF94A3B8)
-                                        )
-                                    }
-                                    if (selectedId != null || selectedWireId != null) {
-                                        IconButton(
-                                            onClick = {
-                                                if (selectedId != null) viewModel.deleteSelectedComponent()
-                                                else if (selectedWireId != null) viewModel.deleteSelectedWire()
-                                            },
-                                            modifier = Modifier
-                                                .size(34.dp)
-                                                .semantics { contentDescription = if (selectedId != null) "حذف قطعه انتخاب شده" else "حذف سیم انتخاب شده" }
-                                        ) {
-                                            Icon(Icons.Outlined.Delete, contentDescription = null, tint = Color(0xFFFF1744))
-                                        }
-                                    }
-                                }
-                            }
-
-                            ToolbarTab.VIEW -> {
-                                // گروه ۲: نمایش (Fit-to-Screen / Grid / Zoom In / Zoom Out)
-                                Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                                    // دکمه نمایش کل مدار (Fit-to-Screen)
-                                    Button(
-                                        onClick = { viewModel.fitToScreen() },
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7)),
-                                        shape = RoundedCornerShape(6.dp),
-                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                        modifier = Modifier.semantics { contentDescription = "نمایش کامل و وسط‌چین کردن تمام اجزای مدار" }
-                                    ) {
-                                        Icon(Icons.Outlined.FitScreen, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("نمایش کل مدار", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                                    }
-
-                                    IconButton(
-                                        onClick = { viewModel.toggleSnapToGrid() },
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .semantics { contentDescription = "فعال یا غیرفعال کردن شبکه Snap-to-Grid" }
-                                    ) {
-                                        Icon(Icons.Outlined.GridOn, contentDescription = null, tint = if (isSnapToGrid) Color(0xFF00F0FF) else Color(0xFF475569))
-                                    }
-
-                                    // کلید تاگل خطوط راهنمای هوشمند هم‌ترازی (Smart Guides)
-                                    IconButton(
-                                        onClick = { viewModel.toggleSmartGuides() },
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .semantics { contentDescription = if (isSmartGuidesEnabled) "غیرفعال کردن خطوط راهنمای هوشمند" else "فعال کردن خطوط راهنمای هوشمند" }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Straighten,
-                                            contentDescription = null,
-                                            tint = if (isSmartGuidesEnabled) Color(0xFFFF4081) else Color(0xFF475569)
-                                        )
-                                    }
-
-                                    IconButton(
-                                        onClick = { viewModel.zoomIn() },
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .semantics { contentDescription = "بزرگ‌نمایی بوم مدار" }
-                                    ) {
-                                        Icon(Icons.Outlined.ZoomIn, contentDescription = null, tint = Color.White)
-                                    }
-                                    IconButton(
-                                        onClick = { viewModel.zoomOut() },
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .semantics { contentDescription = "کوچک‌نمایی بوم مدار" }
-                                    ) {
-                                        Icon(Icons.Outlined.ZoomOut, contentDescription = null, tint = Color.White)
-                                    }
-                                    IconButton(
-                                        onClick = { isFullscreenMode = !isFullscreenMode },
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .semantics { contentDescription = if (isFullscreenMode) "خروج از حالت تمام صفحه" else "تمام صفحه شدن بوم" }
-                                    ) {
-                                        Icon(
-                                            imageVector = if (isFullscreenMode) Icons.Outlined.FullscreenExit else Icons.Outlined.Fullscreen,
-                                            contentDescription = null,
-                                            tint = Color(0xFF00F0FF)
-                                        )
-                                    }
-
-                                    // کلید تاگل نمایش شماره‌های سیم و نت
-                                    IconButton(
-                                        onClick = { viewModel.toggleShowWireNumbers() },
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .semantics { contentDescription = if (showWireNumbers) "مخفی کردن شماره سیم‌ها" else "نمایش شماره سیم‌ها" }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Numbers,
-                                            contentDescription = null,
-                                            tint = if (showWireNumbers) Color(0xFF00E676) else Color(0xFF475569)
-                                        )
-                                    }
-
-                                    // دکمه باز کردن جدول لیست کابل
-                                    Button(
-                                        onClick = { showCableListDialog = true },
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                                        shape = RoundedCornerShape(6.dp),
-                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                        modifier = Modifier.semantics { contentDescription = "مشاهده جدول لیست کابل و استخراج CSV" }
-                                    ) {
-                                        Icon(Icons.Outlined.FormatListNumbered, contentDescription = null, tint = Color(0xFF00F0FF), modifier = Modifier.size(16.dp))
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("لیست کابل", color = Color(0xFF00F0FF), fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                                    }
-                                }
-                            }
-
-                            ToolbarTab.SIMULATION -> {
-                                // گروه ۳: شبیه‌سازی (Step / Speed / Status)
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Button(
-                                        onClick = { viewModel.executeSingleStepSimulation() },
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                                        shape = RoundedCornerShape(6.dp),
-                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                        modifier = Modifier.semantics { contentDescription = "اجرای تک گام شبیه‌سازی مدار" }
-                                    ) {
-                                        Icon(Icons.Outlined.SkipNext, contentDescription = null, tint = Color(0xFFFFD600), modifier = Modifier.size(16.dp))
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("گام بعدی (Step)", color = Color(0xFFFFD600), fontSize = 11.sp)
-                                    }
-
-                                    val nextSpeed = when (simSpeed) {
-                                        1f -> 2f
-                                        2f -> 0.5f
-                                        else -> 1f
-                                    }
+                            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                ToolbarTab.values().forEach { tab ->
+                                    val isSelected = activeToolbarTab == tab
                                     Box(
                                         modifier = Modifier
-                                            .clickable { viewModel.setSimulationSpeed(nextSpeed) }
-                                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(6.dp))
-                                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                                            .semantics { contentDescription = "تنظیم سرعت شبیه‌سازی: ${simSpeed}x" }
+                                            .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
+                                            .clickable { activeToolbarTab = tab }
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
                                     ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Outlined.Speed, contentDescription = null, tint = Color(0xFF00F0FF), modifier = Modifier.size(14.dp))
-                                            Spacer(modifier = Modifier.width(3.dp))
-                                            Text(
-                                                text = "سرعت: ${simSpeed}x",
-                                                color = Color(0xFF00F0FF),
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
+                                        Text(tab.title, color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                                    }
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState()).padding(start = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(0.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                when (activeToolbarTab) {
+                                    ToolbarTab.EDIT -> {
+                                        IconButton(onClick = { viewModel.undo() }, enabled = canUndo, modifier = Modifier.size(28.dp)) { Icon(Icons.Outlined.Undo, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(16.dp)) }
+                                        IconButton(onClick = { viewModel.redo() }, enabled = canRedo, modifier = Modifier.size(28.dp)) { Icon(Icons.Outlined.Redo, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(16.dp)) }
+                                        IconButton(onClick = { viewModel.copySelectedComponent() }, enabled = selectedId != null, modifier = Modifier.size(28.dp)) { Icon(Icons.Outlined.ContentCopy, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }
+                                        IconButton(onClick = { viewModel.pasteComponent() }, modifier = Modifier.size(28.dp)) { Icon(Icons.Outlined.ContentPaste, contentDescription = null, tint = Color(0xFF00E676), modifier = Modifier.size(16.dp)) }
+                                        IconButton(onClick = { viewModel.rotateSelectedComponent() }, enabled = selectedId != null, modifier = Modifier.size(28.dp)) { Icon(Icons.Outlined.RotateRight, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(16.dp)) }
+                                        IconButton(onClick = { viewModel.toggleLockSelectedComponent() }, enabled = selectedId != null, modifier = Modifier.size(28.dp)) { Icon(if (selectedComponent?.isLocked == true) Icons.Outlined.Lock else Icons.Outlined.LockOpen, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp)) }
+                                        IconButton(onClick = { viewModel.toggleMultiSelectMode() }, modifier = Modifier.size(28.dp)) { Icon(Icons.Outlined.SelectAll, contentDescription = null, tint = if (isMultiSelectMode) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp)) }
+                                        if (selectedId != null || selectedWireId != null) {
+                                            IconButton(onClick = { if (selectedId != null) viewModel.deleteSelectedComponent() else viewModel.deleteSelectedWire() }, modifier = Modifier.size(28.dp)) { Icon(Icons.Outlined.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp)) }
                                         }
                                     }
-
-                                    Button(
-                                        onClick = {
-                                            viewModel.refreshAvailableTimingSignals()
-                                            showTimingDialog = true
-                                        },
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                                        shape = RoundedCornerShape(6.dp),
-                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                        modifier = Modifier
-                                            .testTag("open_circuit_timing_button")
-                                            .semantics { contentDescription = "مشاهده نمودار زمانی سیگنال‌های مدار" }
-                                    ) {
-                                        Icon(Icons.Default.Timeline, contentDescription = null, tint = Color(0xFF00E5FF), modifier = Modifier.size(16.dp))
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("نمودار زمانی", color = Color(0xFF00E5FF), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                    ToolbarTab.VIEW -> {
+                                        IconButton(onClick = { viewModel.fitToScreen() }, modifier = Modifier.size(28.dp)) { Icon(Icons.Outlined.FitScreen, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }
+                                        IconButton(onClick = { viewModel.toggleSnapToGrid() }, modifier = Modifier.size(28.dp)) { Icon(Icons.Outlined.GridOn, contentDescription = null, tint = if (isSnapToGrid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.size(16.dp)) }
+                                        IconButton(onClick = { viewModel.toggleSmartGuides() }, modifier = Modifier.size(28.dp)) { Icon(Icons.Outlined.Straighten, contentDescription = null, tint = if (isSmartGuidesEnabled) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.size(16.dp)) }
+                                        IconButton(onClick = { isFullscreenMode = !isFullscreenMode }, modifier = Modifier.size(28.dp)) { Icon(if (isFullscreenMode) Icons.Outlined.FullscreenExit else Icons.Outlined.Fullscreen, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }
+                                        IconButton(onClick = { viewModel.toggleShowWireNumbers() }, modifier = Modifier.size(28.dp)) { Icon(Icons.Outlined.Numbers, contentDescription = null, tint = if (showWireNumbers) Color(0xFF00E676) else MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.size(16.dp)) }
+                                        IconButton(onClick = { showCableListDialog = true }, modifier = Modifier.size(28.dp)) { Icon(Icons.Outlined.FormatListNumbered, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }
+                                    }
+                                    ToolbarTab.SIMULATION -> {
+                                        IconButton(onClick = { viewModel.executeSingleStepSimulation() }, modifier = Modifier.size(28.dp)) { Icon(Icons.Outlined.SkipNext, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(16.dp)) }
+                                        IconButton(onClick = { viewModel.refreshAvailableTimingSignals(); showTimingDialog = true }, modifier = Modifier.size(28.dp)) { Icon(Icons.Default.Timeline, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }
+                                        Text(statusMsg, color = if (isSimRunning) Color(0xFF00E676) else MaterialTheme.colorScheme.tertiary, fontSize = 9.sp, maxLines = 1, modifier = Modifier.padding(start = 4.dp))
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
             }
 
             if (!isFullscreenMode) {
-            // نوار برگه‌ها (Sheets Bar) و ابزارهای سریع (لایه‌ها، جستجو، حالت انتخاب)
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                tonalElevation = 3.dp,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 3.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // فهرست برگه‌ها
-                    LazyRow(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        items(sheets) { sheet ->
-                            val isSelected = sheet.id == currentSheetId
-                            Surface(
-                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                                shape = RoundedCornerShape(10.dp),
-                                border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
-                                modifier = Modifier
-                                    .clickable {
-                                        if (isSelected) {
-                                            showSheetOptionsSheetId = sheet.id
-                                        } else {
-                                            viewModel.selectSheet(sheet.id)
-                                        }
-                                    }
-                                    .semantics { contentDescription = "برگه ${sheet.name}" }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = sheet.name,
-                                        color = if (isSelected) Color.White else Color(0xFF94A3B8),
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        fontSize = 11.sp
-                                    )
-                                    if (isSelected) {
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Icon(
-                                            Icons.Outlined.MoreVert,
-                                            contentDescription = "گزینه‌های برگه",
-                                            tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
-                                            modifier = Modifier.size(13.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                        item {
-                            IconButton(
-                                onClick = { viewModel.addSheet() },
-                                modifier = Modifier
-                                    .size(28.dp)
-                                    .semantics { contentDescription = "افزودن برگه جدید به مدار" }
-                            ) {
-                                Icon(Icons.Outlined.Add, contentDescription = null, tint = Color(0xFF00E5FF), modifier = Modifier.size(17.dp))
-                            }
-                        }
-                    }
-
-                    // ابزارهای سریع: جستجوی بوم، مدیریت لایه‌ها، انتخاب چندتایی
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(
-                            onClick = { showSearchDialog = true },
-                            modifier = Modifier
-                                .size(28.dp)
-                                .semantics { contentDescription = "جستجوی قطعه روی بوم" }
-                        ) {
-                            Icon(Icons.Outlined.Search, contentDescription = null, tint = Color(0xFFFFD600), modifier = Modifier.size(17.dp))
-                        }
-
-                        IconButton(
-                            onClick = { showLayersDialog = true },
-                            modifier = Modifier
-                                .size(28.dp)
-                                .semantics { contentDescription = "مدیریت لایه‌ها" }
-                        ) {
-                            Icon(Icons.Outlined.Layers, contentDescription = null, tint = Color(0xFF00E5FF), modifier = Modifier.size(17.dp))
-                        }
-
-                        Surface(
-                            color = if (isMultiSelectMode) Color(0xFFFF9100) else MaterialTheme.colorScheme.surfaceVariant,
-                            shape = RoundedCornerShape(6.dp),
-                            border = if (isMultiSelectMode) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFD600)) else null,
-                            modifier = Modifier
-                                .clickable { viewModel.toggleMultiSelectMode() }
-                                .semantics { contentDescription = if (isMultiSelectMode) "خروج از انتخاب چندتایی" else "فعال‌سازی انتخاب چندتایی" }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.SelectAll,
-                                    contentDescription = null,
-                                    tint = if (isMultiSelectMode) Color.Black else Color(0xFF00E5FF),
-                                    modifier = Modifier.size(15.dp)
-                                )
-                                Spacer(modifier = Modifier.width(3.dp))
-                                Text(
-                                    text = if (isMultiSelectMode && selectedComponentIds.isNotEmpty())
-                                        "انتخاب (${PersianUtils.toPersianDigits(selectedComponentIds.size)})"
-                                    else
-                                        "انتخاب چندتایی",
-                                    color = if (isMultiSelectMode) Color.Black else Color.White,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 10.sp
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // بنر عملیات گروهی در حالت انتخاب چندتایی
-            if (isMultiSelectMode) {
+                // نوار برگه‌ها (Sheets Bar) و ابزارهای سریع (لایه‌ها، جستجو، حالت انتخاب)
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant,
-                    tonalElevation = 4.dp,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFF9100).copy(alpha = 0.5f)),
+                    tonalElevation = 2.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 6.dp, vertical = 3.dp),
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        // فهرست برگه‌ها
                         LazyRow(
+                            modifier = Modifier.weight(1f),
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            item {
-                                OutlinedButton(
-                                    onClick = { viewModel.selectAllInCurrentSheet() },
-                                    shape = RoundedCornerShape(4.dp),
-                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 1.dp)
+                            items(sheets) { sheet ->
+                                val isSelected = sheet.id == currentSheetId
+                                Surface(
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                                    shape = RoundedCornerShape(6.dp),
+                                    border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
+                                    modifier = Modifier
+                                        .clickable {
+                                            if (isSelected) {
+                                                showSheetOptionsSheetId = sheet.id
+                                            } else {
+                                                viewModel.selectSheet(sheet.id)
+                                            }
+                                        }
+                                        .semantics { contentDescription = "برگه ${sheet.name}" }
                                 ) {
-                                    Text("انتخاب همه", color = Color(0xFF00E5FF), fontSize = 10.sp)
-                                }
-                            }
-
-                            // منوی هم‌ترازی
-                            item {
-                                Box {
-                                    Button(
-                                        onClick = { showAlignmentMenu = true },
-                                        enabled = selectedComponentIds.size >= 2,
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7)),
-                                        shape = RoundedCornerShape(4.dp),
-                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 1.dp)
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text("هم‌ترازی", color = Color.White, fontSize = 10.sp)
-                                    }
-                                    DropdownMenu(
-                                        expanded = showAlignmentMenu,
-                                        onDismissRequest = { showAlignmentMenu = false }
-                                    ) {
-                                        DropdownMenuItem(
-                                            text = { Text("هم‌ترازی چپ") },
-                                            leadingIcon = { Icon(Icons.Outlined.FormatAlignLeft, contentDescription = null) },
-                                            onClick = {
-                                                viewModel.alignSelectedComponents(AlignmentType.LEFT)
-                                                showAlignmentMenu = false
-                                            }
+                                        Text(
+                                            text = sheet.name,
+                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 10.sp
                                         )
-                                        DropdownMenuItem(
-                                            text = { Text("هم‌ترازی مرکز افقی") },
-                                            leadingIcon = { Icon(Icons.Outlined.FormatAlignCenter, contentDescription = null) },
-                                            onClick = {
-                                                viewModel.alignSelectedComponents(AlignmentType.CENTER_X)
-                                                showAlignmentMenu = false
-                                            }
-                                        )
-                                        DropdownMenuItem(
-                                            text = { Text("هم‌ترازی راست") },
-                                            leadingIcon = { Icon(Icons.Outlined.FormatAlignRight, contentDescription = null) },
-                                            onClick = {
-                                                viewModel.alignSelectedComponents(AlignmentType.RIGHT)
-                                                showAlignmentMenu = false
-                                            }
-                                        )
-                                        DropdownMenuItem(
-                                            text = { Text("هم‌ترازی بالا") },
-                                            leadingIcon = { Icon(Icons.Outlined.VerticalAlignTop, contentDescription = null) },
-                                            onClick = {
-                                                viewModel.alignSelectedComponents(AlignmentType.TOP)
-                                                showAlignmentMenu = false
-                                            }
-                                        )
-                                        DropdownMenuItem(
-                                            text = { Text("هم‌ترازی وسط عمودی") },
-                                            leadingIcon = { Icon(Icons.Outlined.VerticalAlignCenter, contentDescription = null) },
-                                            onClick = {
-                                                viewModel.alignSelectedComponents(AlignmentType.MIDDLE_Y)
-                                                showAlignmentMenu = false
-                                            }
-                                        )
-                                        DropdownMenuItem(
-                                            text = { Text("هم‌ترازی پایین") },
-                                            leadingIcon = { Icon(Icons.Outlined.VerticalAlignBottom, contentDescription = null) },
-                                            onClick = {
-                                                viewModel.alignSelectedComponents(AlignmentType.BOTTOM)
-                                                showAlignmentMenu = false
-                                            }
-                                        )
+                                        if (isSelected) {
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Icon(
+                                                Icons.Outlined.MoreVert,
+                                                contentDescription = "گزینه‌های برگه",
+                                                tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
+                                                modifier = Modifier.size(12.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
-
-                            // دکمه‌های توزیع
-                            item {
-                                OutlinedButton(
-                                    onClick = { viewModel.distributeSelectedComponents(DistributionType.HORIZONTAL) },
-                                    enabled = selectedComponentIds.size >= 3,
-                                    shape = RoundedCornerShape(4.dp),
-                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 1.dp)
-                                ) {
-                                    Text("توزیع افقی", color = Color(0xFFFFD600), fontSize = 10.sp)
-                                }
-                            }
-                            item {
-                                OutlinedButton(
-                                    onClick = { viewModel.distributeSelectedComponents(DistributionType.VERTICAL) },
-                                    enabled = selectedComponentIds.size >= 3,
-                                    shape = RoundedCornerShape(4.dp),
-                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 1.dp)
-                                ) {
-                                    Text("توزیع عمودی", color = Color(0xFFFFD600), fontSize = 10.sp)
-                                }
-                            }
-
-                            // کپی / جای‌گذاری / چرخش / قفل / حذف گروهی
                             item {
                                 IconButton(
-                                    onClick = { viewModel.copySelectedComponents() },
-                                    enabled = selectedComponentIds.isNotEmpty(),
-                                    modifier = Modifier.size(28.dp)
+                                    onClick = { viewModel.addSheet() },
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .semantics { contentDescription = "افزودن برگه جدید به مدار" }
                                 ) {
-                                    Icon(Icons.Outlined.CopyAll, contentDescription = "کپی گروهی", tint = Color(0xFF00E5FF), modifier = Modifier.size(16.dp))
-                                }
-                            }
-                            item {
-                                IconButton(
-                                    onClick = { viewModel.pasteComponents() },
-                                    modifier = Modifier.size(28.dp)
-                                ) {
-                                    Icon(Icons.Outlined.ContentPaste, contentDescription = "جای‌گذاری گروهی", tint = Color(0xFF00E676), modifier = Modifier.size(16.dp))
-                                }
-                            }
-                            item {
-                                IconButton(
-                                    onClick = { viewModel.rotateSelectedComponents() },
-                                    enabled = selectedComponentIds.isNotEmpty(),
-                                    modifier = Modifier.size(28.dp)
-                                ) {
-                                    Icon(Icons.Outlined.RotateRight, contentDescription = "چرخش گروهی", tint = Color(0xFFFFD600), modifier = Modifier.size(16.dp))
-                                }
-                            }
-                            item {
-                                IconButton(
-                                    onClick = { viewModel.toggleLockSelectedComponents() },
-                                    enabled = selectedComponentIds.isNotEmpty(),
-                                    modifier = Modifier.size(28.dp)
-                                ) {
-                                    Icon(Icons.Outlined.Lock, contentDescription = "قفل/باز گروهی", tint = Color.White, modifier = Modifier.size(16.dp))
-                                }
-                            }
-                            item {
-                                IconButton(
-                                    onClick = { viewModel.deleteSelectedBatch() },
-                                    enabled = selectedComponentIds.isNotEmpty(),
-                                    modifier = Modifier.size(28.dp)
-                                ) {
-                                    Icon(Icons.Outlined.Delete, contentDescription = "حذف گروهی", tint = Color(0xFFFF1744), modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Outlined.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
                                 }
                             }
                         }
 
-                        // دکمه خروج از حالت انتخاب
-                        IconButton(
-                            onClick = { viewModel.setMultiSelectMode(false) },
-                            modifier = Modifier.size(28.dp)
+                        // ابزارهای سریع: جستجوی بوم، مدیریت لایه‌ها، انتخاب چندتایی
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Outlined.Close, contentDescription = "خروج از انتخاب چندتایی", tint = Color(0xFF94A3B8), modifier = Modifier.size(18.dp))
+                            IconButton(
+                                onClick = { showSearchDialog = true },
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .semantics { contentDescription = "جستجوی قطعه روی بوم" }
+                            ) {
+                                Icon(Icons.Outlined.Search, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(14.dp))
+                            }
+
+                            IconButton(
+                                onClick = { showLayersDialog = true },
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .semantics { contentDescription = "مدیریت لایه‌ها" }
+                            ) {
+                                Icon(Icons.Outlined.Layers, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                            }
+
+                            Surface(
+                                color = if (isMultiSelectMode) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surface,
+                                shape = RoundedCornerShape(4.dp),
+                                border = if (isMultiSelectMode) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary) else null,
+                                modifier = Modifier
+                                    .clickable { viewModel.toggleMultiSelectMode() }
+                                    .semantics { contentDescription = if (isMultiSelectMode) "خروج از انتخاب چندتایی" else "فعال‌سازی انتخاب چندتایی" }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.SelectAll,
+                                        contentDescription = null,
+                                        tint = if (isMultiSelectMode) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text(
+                                        text = if (isMultiSelectMode && selectedComponentIds.isNotEmpty())
+                                            "انتخاب (${PersianUtils.toPersianDigits(selectedComponentIds.size)})"
+                                        else
+                                            "انتخاب",
+                                        color = if (isMultiSelectMode) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onSurface,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 9.sp
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-            }
+
+                // بنر عملیات گروهی در حالت انتخاب چندتایی
+                if (isMultiSelectMode) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        tonalElevation = 4.dp,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 6.dp, vertical = 3.dp)
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedButton(
+                                onClick = { viewModel.selectAllInCurrentSheet() },
+                                shape = RoundedCornerShape(4.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 1.dp)
+                            ) {
+                                Text("انتخاب همه", color = MaterialTheme.colorScheme.primary, fontSize = 10.sp)
+                            }
+
+                            Box {
+                                Button(
+                                    onClick = { showAlignmentMenu = true },
+                                    enabled = selectedComponentIds.size >= 2,
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                    shape = RoundedCornerShape(4.dp),
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 1.dp)
+                                ) {
+                                    Text("هم‌ترازی", color = MaterialTheme.colorScheme.onPrimary, fontSize = 10.sp)
+                                }
+                                DropdownMenu(
+                                    expanded = showAlignmentMenu,
+                                    onDismissRequest = { showAlignmentMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("هم‌ترازی چپ") },
+                                        leadingIcon = { Icon(Icons.Outlined.FormatAlignLeft, contentDescription = null) },
+                                        onClick = {
+                                            viewModel.alignSelectedComponents(AlignmentType.LEFT)
+                                            showAlignmentMenu = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("هم‌ترازی مرکز افقی") },
+                                        leadingIcon = { Icon(Icons.Outlined.FormatAlignCenter, contentDescription = null) },
+                                        onClick = {
+                                            viewModel.alignSelectedComponents(AlignmentType.CENTER_X)
+                                            showAlignmentMenu = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("هم‌ترازی راست") },
+                                        leadingIcon = { Icon(Icons.Outlined.FormatAlignRight, contentDescription = null) },
+                                        onClick = {
+                                            viewModel.alignSelectedComponents(AlignmentType.RIGHT)
+                                            showAlignmentMenu = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("هم‌ترازی بالا") },
+                                        leadingIcon = { Icon(Icons.Outlined.VerticalAlignTop, contentDescription = null) },
+                                        onClick = {
+                                            viewModel.alignSelectedComponents(AlignmentType.TOP)
+                                            showAlignmentMenu = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("هم‌ترازی وسط عمودی") },
+                                        leadingIcon = { Icon(Icons.Outlined.VerticalAlignCenter, contentDescription = null) },
+                                        onClick = {
+                                            viewModel.alignSelectedComponents(AlignmentType.MIDDLE_Y)
+                                            showAlignmentMenu = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("هم‌ترازی پایین") },
+                                        leadingIcon = { Icon(Icons.Outlined.VerticalAlignBottom, contentDescription = null) },
+                                        onClick = {
+                                            viewModel.alignSelectedComponents(AlignmentType.BOTTOM)
+                                            showAlignmentMenu = false
+                                        }
+                                    )
+                                }
+                            }
+
+                            OutlinedButton(
+                                onClick = { viewModel.distributeSelectedComponents(DistributionType.HORIZONTAL) },
+                                enabled = selectedComponentIds.size >= 3,
+                                shape = RoundedCornerShape(4.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 1.dp)
+                            ) {
+                                Text("توزیع افقی", color = MaterialTheme.colorScheme.tertiary, fontSize = 10.sp)
+                            }
+                            OutlinedButton(
+                                onClick = { viewModel.distributeSelectedComponents(DistributionType.VERTICAL) },
+                                enabled = selectedComponentIds.size >= 3,
+                                shape = RoundedCornerShape(4.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 1.dp)
+                            ) {
+                                Text("توزیع عمودی", color = MaterialTheme.colorScheme.tertiary, fontSize = 10.sp)
+                            }
+
+                            IconButton(
+                                onClick = { viewModel.copySelectedComponents() },
+                                enabled = selectedComponentIds.isNotEmpty(),
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(Icons.Outlined.CopyAll, contentDescription = "کپی گروهی", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                            }
+                            IconButton(
+                                onClick = { viewModel.pasteComponents() },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(Icons.Outlined.ContentPaste, contentDescription = "جای‌گذاری گروهی", tint = Color(0xFF00E676), modifier = Modifier.size(16.dp))
+                            }
+                            IconButton(
+                                onClick = { viewModel.rotateSelectedComponents() },
+                                enabled = selectedComponentIds.isNotEmpty(),
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(Icons.Outlined.RotateRight, contentDescription = "چرخش گروهی", tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(16.dp))
+                            }
+                            IconButton(
+                                onClick = { viewModel.toggleLockSelectedComponents() },
+                                enabled = selectedComponentIds.isNotEmpty(),
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(Icons.Outlined.Lock, contentDescription = "قفل/باز گروهی", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(16.dp))
+                            }
+                            IconButton(
+                                onClick = { viewModel.deleteSelectedBatch() },
+                                enabled = selectedComponentIds.isNotEmpty(),
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(Icons.Outlined.Delete, contentDescription = "حذف گروهی", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                            }
+
+                            IconButton(
+                                onClick = { viewModel.setMultiSelectMode(false) },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(Icons.Outlined.Close, contentDescription = "خروج از انتخاب چندتایی", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
+                }
             }
 
             // بدنه اصلی بوم مدار
@@ -1119,8 +781,8 @@ fun CircuitDesignerScreen(
                         if (!isTabletLandscape && selectedComponent != null && !isSimRunning && !showQuickContextMenu) {
                             Card(
                                 shape = RoundedCornerShape(10.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xF2081526)),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF00F0FF).copy(alpha = 0.5f)),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
                                 modifier = Modifier
                                     .align(Alignment.BottomStart)
                                     .padding(10.dp)
@@ -1134,12 +796,12 @@ fun CircuitDesignerScreen(
                                     ) {
                                         Text(
                                             text = "${selectedComponent.label} - ${selectedComponent.type.persianName.take(15)}",
-                                            color = Color(0xFF00F0FF),
+                                            color = MaterialTheme.colorScheme.primary,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 12.sp
                                         )
                                         IconButton(onClick = { viewModel.deleteSelectedComponent() }, modifier = Modifier.size(24.dp)) {
-                                            Icon(Icons.Outlined.Delete, contentDescription = "حذف قطعه", tint = Color(0xFFFF3D00))
+                                            Icon(Icons.Outlined.Delete, contentDescription = "حذف قطعه", tint = MaterialTheme.colorScheme.error)
                                         }
                                     }
 
@@ -1155,7 +817,7 @@ fun CircuitDesignerScreen(
                                             ComponentType.MOTOR_3PHASE
                                         )
                                     ) {
-                                        Text(text = "تگ اتصال کویل (KM1, KM2, KT1):", color = Color(0xFF94A3B8), fontSize = 10.sp)
+                                        Text(text = "تگ اتصال کویل (KM1, KM2, KT1):", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                                         OutlinedTextField(
                                             value = selectedComponent.tagBinding,
                                             onValueChange = { viewModel.updateSelectedComponentTag(it) },
@@ -1166,12 +828,12 @@ fun CircuitDesignerScreen(
 
                                     if (selectedComponent.type == ComponentType.CONTACTOR_COIL) {
                                         Spacer(modifier = Modifier.height(4.dp))
-                                        Text(text = "اینترلاک متقابل حفاظتی (مثلاً با KM2):", color = Color(0xFFFF9100), fontSize = 10.sp)
+                                        Text(text = "اینترلاک متقابل حفاظتی (مثلاً با KM2):", color = MaterialTheme.colorScheme.tertiary, fontSize = 10.sp)
                                         OutlinedTextField(
                                             value = selectedComponent.interlockTag,
                                             onValueChange = { viewModel.updateSelectedComponentInterlockTag(it) },
                                             singleLine = true,
-                                            placeholder = { Text("مثلاً KM2", color = Color(0xFF64748B), fontSize = 10.sp) },
+                                            placeholder = { Text("مثلاً KM2", color = MaterialTheme.colorScheme.outline, fontSize = 10.sp) },
                                             modifier = Modifier.fillMaxWidth()
                                         )
                                     }
@@ -1185,7 +847,7 @@ fun CircuitDesignerScreen(
                                         ) {
                                             Text(
                                                 text = if (selectedComponent.isMaintained) "کلید قفل‌شونده (ماندگار)" else "شستی لحظه‌ای (بازگشت‌فنر)",
-                                                color = if (selectedComponent.isMaintained) Color(0xFFFFD600) else Color(0xFF00E676),
+                                                color = if (selectedComponent.isMaintained) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
                                                 fontSize = 11.sp
                                             )
                                             Switch(
@@ -1200,21 +862,21 @@ fun CircuitDesignerScreen(
                                         Button(
                                             onClick = { viewModel.toggleBimetalTrip(selectedComponent.id) },
                                             colors = ButtonDefaults.buttonColors(
-                                                containerColor = if (selectedComponent.isBimetalTripped) Color(0xFFFF1744) else Color(0xFF334155)
+                                                containerColor = if (selectedComponent.isBimetalTripped) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surfaceVariant
                                             ),
                                             shape = RoundedCornerShape(6.dp),
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
                                             Text(
                                                 text = if (selectedComponent.isBimetalTripped) "وضعیت: تریپ خورده (قطع ۹۵-۹۶) - کلیک برای وصل" else "شبیه‌سازی تریپ اضافه بار بی‌متال",
-                                                color = Color.White,
+                                                color = if (selectedComponent.isBimetalTripped) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onSurfaceVariant,
                                                 fontSize = 10.sp
                                             )
                                         }
                                     }
 
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text(text = "اتصال به PLC (ورودی I یا خروجی Q):", color = Color(0xFF00E676), fontSize = 10.sp)
+                                    Text(text = "اتصال به PLC (ورودی I یا خروجی Q):", color = MaterialTheme.colorScheme.primary, fontSize = 10.sp)
                                     OutlinedTextField(
                                         value = selectedComponent.plcTagBinding,
                                         onValueChange = { viewModel.updateSelectedComponentPlcTag(it) },
@@ -1224,7 +886,7 @@ fun CircuitDesignerScreen(
 
                                     if (selectedComponent.type in listOf(ComponentType.TIMER_ON_DELAY_COIL, ComponentType.TIMER_OFF_DELAY_COIL)) {
                                         Spacer(modifier = Modifier.height(4.dp))
-                                        Text(text = "زمان تاخیر: ${PersianUtils.toPersianDigits(selectedComponent.delaySeconds.toInt())} ثانیه", color = Color(0xFFFFD600), fontSize = 10.sp)
+                                        Text(text = "زمان تاخیر: ${PersianUtils.toPersianDigits(selectedComponent.delaySeconds.toInt())} ثانیه", color = MaterialTheme.colorScheme.tertiary, fontSize = 10.sp)
                                         Slider(
                                             value = selectedComponent.delaySeconds,
                                             onValueChange = { viewModel.updateSelectedComponentTimerDelay(it) },
@@ -1236,13 +898,13 @@ fun CircuitDesignerScreen(
                             }
                         }
 
-                        // پنل مشخصات سیم انتخاب‌شده (مرحله P3)
+                        // پنل مشخصات سیم انتخاب‌شده
                         val selectedWire = wires.find { it.id == selectedWireId }
                         if (!isTabletLandscape && selectedWire != null && selectedComponent == null && !isSimRunning) {
                             Card(
                                 shape = RoundedCornerShape(10.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xF2081526)),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFF9100).copy(alpha = 0.6f)),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.6f)),
                                 modifier = Modifier
                                     .align(Alignment.BottomStart)
                                     .padding(10.dp)
@@ -1259,14 +921,14 @@ fun CircuitDesignerScreen(
                                                 modifier = Modifier
                                                     .size(12.dp)
                                                     .background(
-                                                        color = try { Color(android.graphics.Color.parseColor(selectedWire.wireColorHex)) } catch (e: Exception) { Color(0xFF00E5FF) },
+                                                        color = try { Color(android.graphics.Color.parseColor(selectedWire.wireColorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary },
                                                         shape = CircleShape
                                                     )
                                             )
                                             Spacer(modifier = Modifier.width(6.dp))
                                             Text(
                                                 text = "مشخصات سیم و نِت",
-                                                color = Color(0xFFFF9100),
+                                                color = MaterialTheme.colorScheme.tertiary,
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 12.sp
                                             )
@@ -1275,22 +937,22 @@ fun CircuitDesignerScreen(
                                             onClick = { viewModel.deleteSelectedWire() },
                                             modifier = Modifier.size(24.dp)
                                         ) {
-                                            Icon(Icons.Outlined.Delete, contentDescription = "حذف سیم", tint = Color(0xFFFF3D00))
+                                            Icon(Icons.Outlined.Delete, contentDescription = "حذف سیم", tint = MaterialTheme.colorScheme.error)
                                         }
                                     }
 
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text(text = "شماره نِت / سیم (اتصال الکتریکی):", color = Color(0xFF94A3B8), fontSize = 10.sp)
+                                    Text(text = "شماره نِت / سیم (اتصال الکتریکی):", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                                     OutlinedTextField(
                                         value = selectedWire.wireNumber,
                                         onValueChange = { viewModel.updateWireNumber(selectedWire.id, it) },
                                         singleLine = true,
-                                        placeholder = { Text("شماره سیم (مثلاً 1, 101, L1)", color = Color(0xFF64748B), fontSize = 10.sp) },
+                                        placeholder = { Text("شماره سیم (مثلاً 1, 101, L1)", color = MaterialTheme.colorScheme.outline, fontSize = 10.sp) },
                                         modifier = Modifier.fillMaxWidth()
                                     )
 
                                     Spacer(modifier = Modifier.height(6.dp))
-                                    Text(text = "پریست استاندارد رنگ سیم:", color = Color(0xFF00E5FF), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                    Text(text = "پریست استاندارد رنگ سیم:", color = MaterialTheme.colorScheme.primary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
 
                                     var colorCategory by remember { mutableStateOf("IEC_60204") }
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -1301,7 +963,7 @@ fun CircuitDesignerScreen(
                                         ).forEach { (catKey, catLabel) ->
                                             val isCatSel = colorCategory == catKey
                                             Surface(
-                                                color = if (isCatSel) Color(0xFF0284C7) else MaterialTheme.colorScheme.surfaceVariant,
+                                                color = if (isCatSel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                                                 shape = RoundedCornerShape(4.dp),
                                                 modifier = Modifier
                                                     .weight(1f)
@@ -1309,7 +971,7 @@ fun CircuitDesignerScreen(
                                             ) {
                                                 Text(
                                                     text = catLabel,
-                                                    color = if (isCatSel) Color.White else Color(0xFF94A3B8),
+                                                    color = if (isCatSel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                                     fontSize = 9.sp,
                                                     fontWeight = FontWeight.Medium,
                                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -1333,10 +995,10 @@ fun CircuitDesignerScreen(
                                         items(filteredOptions) { opt ->
                                             val isCurr = selectedWire.wireColorHex.equals(opt.colorHex, ignoreCase = true)
                                             Surface(
-                                                color = Color(0xFF0F172A),
+                                                color = MaterialTheme.colorScheme.surfaceVariant,
                                                 border = androidx.compose.foundation.BorderStroke(
                                                     1.dp,
-                                                    if (isCurr) Color(0xFF00E5FF) else Color(0x3364748B)
+                                                    if (isCurr) MaterialTheme.colorScheme.primary else Color.Transparent
                                                 ),
                                                 shape = RoundedCornerShape(4.dp),
                                                 modifier = Modifier.clickable {
@@ -1358,7 +1020,7 @@ fun CircuitDesignerScreen(
                                                     Spacer(modifier = Modifier.width(4.dp))
                                                     Text(
                                                         text = opt.nameFa.take(12),
-                                                        color = if (isCurr) Color(0xFF00E5FF) else Color(0xFFECEFF1),
+                                                        color = if (isCurr) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                                         fontSize = 9.sp
                                                     )
                                                 }
@@ -1370,18 +1032,18 @@ fun CircuitDesignerScreen(
                                     val clauseText = currentPreset?.let { "${it.standardCode} ${it.standardClause}" } ?: selectedWire.colorStandardRef.ifBlank { "نامشخص" }
                                     Text(
                                         text = "استناد: $clauseText",
-                                        color = Color(0xFFFFD600),
+                                        color = MaterialTheme.colorScheme.tertiary,
                                         fontSize = 9.sp
                                     )
 
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text(text = "سطح مقطع سیم (IEC 60228):", color = Color(0xFF80CBC4), fontSize = 10.sp)
+                                    Text(text = "سطح مقطع سیم (IEC 60228):", color = MaterialTheme.colorScheme.secondary, fontSize = 10.sp)
                                     val commonSections = listOf(0.75, 1.0, 1.5, 2.5, 4.0, 6.0, 10.0, 16.0)
                                     LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
                                         items(commonSections) { cs ->
                                             val isChosen = selectedWire.crossSectionMm2 == cs
                                             Surface(
-                                                color = if (isChosen) Color(0xFF00B0FF) else MaterialTheme.colorScheme.surfaceVariant,
+                                                color = if (isChosen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                                                 shape = RoundedCornerShape(4.dp),
                                                 modifier = Modifier.clickable {
                                                     viewModel.updateWireCrossSection(selectedWire.id, cs)
@@ -1389,7 +1051,7 @@ fun CircuitDesignerScreen(
                                             ) {
                                                 Text(
                                                     text = "$cs",
-                                                    color = if (isChosen) Color.White else Color(0xFFCFD8DC),
+                                                    color = if (isChosen) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                                     fontSize = 9.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -1406,18 +1068,18 @@ fun CircuitDesignerScreen(
                                     ) {
                                         Text(
                                             text = "طول تقریبی: ${selectedWire.wireLengthMm.toInt()} mm",
-                                            color = Color(0xFF90A4AE),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             fontSize = 10.sp
                                         )
                                         Button(
                                             onClick = { viewModel.rerouteSingleWire(selectedWire.id) },
-                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F766E)),
+                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
                                             shape = RoundedCornerShape(4.dp),
                                             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 2.dp)
                                         ) {
-                                            Icon(Icons.Outlined.AltRoute, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
+                                            Icon(Icons.Outlined.AltRoute, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(12.dp))
                                             Spacer(modifier = Modifier.width(3.dp))
-                                            Text("مسیریابی مجدد A*", color = Color.White, fontSize = 9.sp)
+                                            Text("مسیریابی مجدد A*", color = MaterialTheme.colorScheme.onSecondaryContainer, fontSize = 9.sp)
                                         }
                                     }
                                 }
@@ -1427,43 +1089,33 @@ fun CircuitDesignerScreen(
                 }
             }
 
-            // جعبه ابزار قطعات صنعتی در پایین صفحه
+            // ==========================================
+            // ⭐️ جعبه ابزار قطعات صنعتی در پایین صفحه (فشرده‌شده)
+            // ==========================================
             Surface(
-                color = Color(0xFF081526),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                tonalElevation = 2.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                Row(
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { showLibrarySheet = true },
+                        modifier = Modifier
+                            .size(30.dp)
+                            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(6.dp))
+                            .testTag("open_library_button")
                     ) {
-                        Text(
-                            text = "نوار قطعات صنعتی استاندارد IEC:",
-                            color = Color(0xFF94A3B8),
-                            fontSize = 11.sp
-                        )
-
-                        Button(
-                            onClick = { showLibrarySheet = true },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00F0FF)),
-                            shape = RoundedCornerShape(6.dp),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                            modifier = Modifier
-                                .testTag("open_library_button")
-                                .semantics { contentDescription = "باز کردن کتابخانه کامل قطعات صنعتی" }
-                        ) {
-                            Icon(Icons.Outlined.ElectricalServices, contentDescription = null, tint = Color.Black, modifier = Modifier.size(14.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("کتابخانه کامل", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                        }
+                        Icon(Icons.Outlined.ElectricalServices, contentDescription = "کتابخانه", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
                     }
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
 
                     LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.weight(1f)
                     ) {
                         val quickComponents = listOf(
                             ComponentType.AC_PHASE,
@@ -1501,7 +1153,7 @@ fun CircuitDesignerScreen(
             }
         }
 
-        // دکمه بزرگ، رنگی و واضح شبیه‌سازی (FAB) با موقعیت کاملاً آزاد و بدون تداخل با پالت قطعات
+        // دکمه شناور شبیه‌سازی (منتقل شده به راست و کمی کوچک‌تر)
         FloatingActionButton(
             onClick = { viewModel.toggleCircuitSimulation() },
             containerColor = if (isSimRunning) Color(0xFFFF1744) else Color(0xFF00E676),
@@ -1509,18 +1161,22 @@ fun CircuitDesignerScreen(
             shape = CircleShape,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(bottom = 100.dp, end = 16.dp)
-                .size(56.dp)
+                .padding(bottom = 76.dp, end = 16.dp)
+                .size(48.dp)
                 .testTag("toggle_simulation_button")
                 .semantics { contentDescription = if (isSimRunning) "توقف شبیه‌سازی مدار" else "اجرای زنده شبیه‌سازی مدار" }
         ) {
             Icon(
                 imageVector = if (isSimRunning) Icons.Outlined.Stop else Icons.Outlined.PlayArrow,
                 contentDescription = null,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
     }
+
+    // ==========================================
+    // دیالوگ‌ها و کامپوزبل‌های پایین فایل (بدون هیچ تغییری)
+    // ==========================================
 
     if (showLibrarySheet) {
         IndustrialLibraryBottomSheet(
@@ -1577,13 +1233,13 @@ fun CircuitDesignerScreen(
         AlertDialog(
             onDismissRequest = { showExportDialog = false },
             title = {
-                Text("خروجی رسمی نقشه مهندسی", color = Color(0xFF00E5FF), fontWeight = FontWeight.Bold)
+                Text("خروجی رسمی نقشه مهندسی", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
             },
             text = {
                 Column {
                     Text(
                         text = "نقشه مدار با استاندارد IEC همراه با کادر مهندسی، جدول مشخصات (Title Block) و لیست قطعات (BOM) تولید می‌شود.",
-                        color = Color(0xFFCFD8DC),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
                     Spacer(modifier = Modifier.height(14.dp))
@@ -1601,7 +1257,7 @@ fun CircuitDesignerScreen(
                                 }
                                 showExportDialog = false
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7)),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             modifier = Modifier.weight(1f)
                         ) {
                             Icon(Icons.Outlined.PictureAsPdf, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -1634,14 +1290,14 @@ fun CircuitDesignerScreen(
                     Text("بستن")
                 }
             },
-            containerColor = Color(0xFF1E2838)
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 
     if (showSaveDialog) {
         AlertDialog(
             onDismissRequest = { showSaveDialog = false },
-            title = { Text("ذخیره پروژه مدار (پایگاه داده Room)", color = Color.White) },
+            title = { Text("ذخیره پروژه مدار (پایگاه داده Room)", color = MaterialTheme.colorScheme.onSurface) },
             text = {
                 Column {
                     OutlinedTextField(
@@ -1677,7 +1333,7 @@ fun CircuitDesignerScreen(
                     Text("انصراف")
                 }
             },
-            containerColor = Color(0xFF1E2838)
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 
@@ -1696,13 +1352,12 @@ fun CircuitDesignerScreen(
         )
     }
 
-    // دیالوگ گزینه‌های برگه فعال (تغییر نام، تکثیر، حذف)
     showSheetOptionsSheetId?.let { targetSheetId ->
         val targetSheet = sheets.find { it.id == targetSheetId }
         if (targetSheet != null) {
             AlertDialog(
                 onDismissRequest = { showSheetOptionsSheetId = null },
-                title = { Text("مدیریت برگه: ${targetSheet.name}", color = Color(0xFF00E5FF), fontWeight = FontWeight.Bold, fontSize = 14.sp) },
+                title = { Text("مدیریت برگه: ${targetSheet.name}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 14.sp) },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(
@@ -1711,7 +1366,7 @@ fun CircuitDesignerScreen(
                                 showRenameSheetDialog = targetSheet
                                 showSheetOptionsSheetId = null
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7)),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -1728,9 +1383,9 @@ fun CircuitDesignerScreen(
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(Icons.Outlined.CopyAll, contentDescription = null, tint = Color(0xFF00E5FF), modifier = Modifier.size(16.dp))
+                            Icon(Icons.Outlined.CopyAll, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("تکثیر برگه و اجزا", color = Color(0xFF00E5FF))
+                            Text("تکثیر برگه و اجزا", color = MaterialTheme.colorScheme.primary)
                         }
 
                         if (sheets.size > 1) {
@@ -1739,12 +1394,12 @@ fun CircuitDesignerScreen(
                                     showDeleteSheetConfirm = targetSheet
                                     showSheetOptionsSheetId = null
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7F1D1D)),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Icon(Icons.Outlined.Delete, contentDescription = null, tint = Color(0xFFFF5252), modifier = Modifier.size(16.dp))
+                                Icon(Icons.Outlined.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("حذف این برگه", color = Color(0xFFFF5252))
+                                Text("حذف این برگه", color = MaterialTheme.colorScheme.error)
                             }
                         }
                     }
@@ -1755,16 +1410,15 @@ fun CircuitDesignerScreen(
                         Text("انصراف")
                     }
                 },
-                containerColor = Color(0xFF1E2838)
+                containerColor = MaterialTheme.colorScheme.surface
             )
         }
     }
 
-    // دیالوگ تغییر نام برگه
     showRenameSheetDialog?.let { targetSheet ->
         AlertDialog(
             onDismissRequest = { showRenameSheetDialog = null },
-            title = { Text("تغییر نام برگه", color = Color(0xFF00E5FF), fontWeight = FontWeight.Bold) },
+            title = { Text("تغییر نام برگه", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
             text = {
                 OutlinedTextField(
                     value = renameSheetInput,
@@ -1791,19 +1445,18 @@ fun CircuitDesignerScreen(
                     Text("انصراف")
                 }
             },
-            containerColor = Color(0xFF1E2838)
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 
-    // دیالوگ تایید حذف برگه
     showDeleteSheetConfirm?.let { targetSheet ->
         AlertDialog(
             onDismissRequest = { showDeleteSheetConfirm = null },
-            title = { Text("حذف برگه «${targetSheet.name}»", color = Color(0xFFFF5252), fontWeight = FontWeight.Bold) },
+            title = { Text("حذف برگه «${targetSheet.name}»", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold) },
             text = {
                 Text(
                     text = "آیا مطمئن هستید؟ تمام قطعات و سیم‌های موجود در این برگه حذف خواهند شد. این عملیات قابل بازگردانی (Undo) است.",
-                    color = Color(0xFFCFD8DC),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
             },
@@ -1816,9 +1469,9 @@ fun CircuitDesignerScreen(
                         }
                         showDeleteSheetConfirm = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("حذف قطعی", color = Color.White)
+                    Text("حذف قطعی", color = MaterialTheme.colorScheme.onError)
                 }
             },
             dismissButton = {
@@ -1826,11 +1479,10 @@ fun CircuitDesignerScreen(
                     Text("انصراف")
                 }
             },
-            containerColor = Color(0xFF1E2838)
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 
-    // دیالوگ جستجوی قطعه روی بوم
     if (showSearchDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -1839,9 +1491,9 @@ fun CircuitDesignerScreen(
             },
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Search, contentDescription = null, tint = Color(0xFFFFD600), modifier = Modifier.size(20.dp))
+                    Icon(Icons.Outlined.Search, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("جستجوی قطعه روی بوم", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("جستجوی قطعه روی بوم", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
             },
             text = {
@@ -1849,12 +1501,12 @@ fun CircuitDesignerScreen(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { viewModel.setSearchQuery(it) },
-                        placeholder = { Text("برچسب (مثلاً KM1)، تگ، یا نوع قطعه...", fontSize = 11.sp, color = Color(0xFF64748B)) },
+                        placeholder = { Text("برچسب (مثلاً KM1)، تگ، یا نوع قطعه...", fontSize = 11.sp, color = MaterialTheme.colorScheme.outline) },
                         singleLine = true,
                         trailingIcon = {
                             if (searchQuery.isNotBlank()) {
                                 IconButton(onClick = { viewModel.clearSearch() }) {
-                                    Icon(Icons.Outlined.Close, contentDescription = "پاک کردن", tint = Color.Gray, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Outlined.Close, contentDescription = "پاک کردن", tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(16.dp))
                                 }
                             }
                         },
@@ -1866,14 +1518,14 @@ fun CircuitDesignerScreen(
                     if (searchQuery.isNotBlank() && searchResults.isEmpty()) {
                         Text(
                             text = "قطعه‌ای با این مشخصات یافت نشد",
-                            color = Color(0xFF94A3B8),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 11.sp,
                             modifier = Modifier.padding(vertical = 12.dp)
                         )
                     } else if (searchResults.isNotEmpty()) {
                         Text(
                             text = "${PersianUtils.toPersianDigits(searchResults.size)} نتیجه یافت شد (برای رفتن به قطعه لمس کنید):",
-                            color = Color(0xFF00E5FF),
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -1882,9 +1534,9 @@ fun CircuitDesignerScreen(
                             items(searchResults) { comp ->
                                 val compSheet = sheets.find { it.id == comp.sheetId }?.name ?: "برگه ۱"
                                 Surface(
-                                    color = Color(0xFF0F172A),
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
                                     shape = RoundedCornerShape(6.dp),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF334155)),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 3.dp)
@@ -1901,25 +1553,25 @@ fun CircuitDesignerScreen(
                                         Column {
                                             Text(
                                                 text = "${comp.label} - ${comp.type.persianName}",
-                                                color = Color.White,
+                                                color = MaterialTheme.colorScheme.onSurface,
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 11.sp
                                             )
                                             if (comp.tagBinding.isNotBlank()) {
                                                 Text(
                                                     text = "تگ اتصال: ${comp.tagBinding}",
-                                                    color = Color(0xFFFFD600),
+                                                    color = MaterialTheme.colorScheme.tertiary,
                                                     fontSize = 9.sp
                                                 )
                                             }
                                         }
                                         Surface(
-                                            color = Color(0xFF0284C7).copy(alpha = 0.25f),
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
                                             shape = RoundedCornerShape(4.dp)
                                         ) {
                                             Text(
                                                 text = compSheet,
-                                                color = Color(0xFF38BDF8),
+                                                color = MaterialTheme.colorScheme.primary,
                                                 fontSize = 9.sp,
                                                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                             )
@@ -1940,26 +1592,25 @@ fun CircuitDesignerScreen(
                     Text("بستن")
                 }
             },
-            containerColor = Color(0xFF1E2838)
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 
-    // دیالوگ مدیریت لایه‌ها
     if (showLayersDialog) {
         AlertDialog(
             onDismissRequest = { showLayersDialog = false },
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Layers, contentDescription = null, tint = Color(0xFF00E5FF), modifier = Modifier.size(20.dp))
+                    Icon(Icons.Outlined.Layers, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("مدیریت لایه‌های مدار", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("مدیریت لایه‌های مدار", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
             },
             text = {
                 Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = "لایه‌ها فقط جهت تفکیک گرافیکی مدار هستند؛ لایه‌های مخفی نیز در شبیه‌سازی اجرا می‌شوند.",
-                        color = Color(0xFF94A3B8),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 10.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
@@ -1968,11 +1619,11 @@ fun CircuitDesignerScreen(
                         val layerColor = try {
                             Color(android.graphics.Color.parseColor(layer.colorHex))
                         } catch (e: Exception) {
-                            Color(0xFF00E5FF)
+                            MaterialTheme.colorScheme.primary
                         }
 
                         Surface(
-                            color = Color(0xFF0F172A),
+                            color = MaterialTheme.colorScheme.surfaceVariant,
                             shape = RoundedCornerShape(8.dp),
                             border = androidx.compose.foundation.BorderStroke(1.dp, layerColor.copy(alpha = 0.4f)),
                             modifier = Modifier.fillMaxWidth()
@@ -1993,7 +1644,7 @@ fun CircuitDesignerScreen(
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
                                         text = "لایه ${layer.name}",
-                                        color = Color.White,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp
                                     )
@@ -2007,7 +1658,7 @@ fun CircuitDesignerScreen(
                                         Icon(
                                             imageVector = if (layer.isVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
                                             contentDescription = if (layer.isVisible) "مخفی کردن لایه" else "نمایش لایه",
-                                            tint = if (layer.isVisible) Color(0xFF00E676) else Color(0xFF64748B),
+                                            tint = if (layer.isVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }
@@ -2019,7 +1670,7 @@ fun CircuitDesignerScreen(
                                         Icon(
                                             imageVector = if (layer.isLocked) Icons.Outlined.Lock else Icons.Outlined.LockOpen,
                                             contentDescription = if (layer.isLocked) "باز کردن قفل لایه" else "قفل کردن لایه",
-                                            tint = if (layer.isLocked) Color(0xFFFF5252) else Color(0xFFECEFF1),
+                                            tint = if (layer.isLocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }
@@ -2028,12 +1679,11 @@ fun CircuitDesignerScreen(
                         }
                     }
 
-                    // اختصاص لایه به قطعه انتخاب شده (در صورت وجود قطعه فعال)
                     if (selectedComponent != null) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "اختصاص قطعه «${selectedComponent.label}» به لایه:",
-                            color = Color(0xFFFFD600),
+                            color = MaterialTheme.colorScheme.tertiary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -2044,7 +1694,7 @@ fun CircuitDesignerScreen(
                             layers.forEach { l ->
                                 val isAssigned = selectedComponent.layerId == l.id
                                 Surface(
-                                    color = if (isAssigned) Color(0xFF0284C7) else MaterialTheme.colorScheme.surfaceVariant,
+                                    color = if (isAssigned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                                     shape = RoundedCornerShape(6.dp),
                                     modifier = Modifier
                                         .weight(1f)
@@ -2052,7 +1702,7 @@ fun CircuitDesignerScreen(
                                 ) {
                                     Text(
                                         text = l.name,
-                                        color = if (isAssigned) Color.White else Color(0xFF94A3B8),
+                                        color = if (isAssigned) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Medium,
                                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -2070,7 +1720,7 @@ fun CircuitDesignerScreen(
                     Text("بستن")
                 }
             },
-            containerColor = Color(0xFF1E2838)
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 
@@ -2089,41 +1739,41 @@ private fun ComponentChip(
     onAdd: () -> Unit
 ) {
     Surface(
-        color = Color(0xFF152238),
-        shape = RoundedCornerShape(8.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, if (isFree) Color(0xFF00F0FF).copy(alpha = 0.35f) else Color(0xFFFFD600).copy(alpha = 0.5f)),
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(6.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, if (isFree) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f) else MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)),
         modifier = Modifier
             .clickable { onAdd() }
             .semantics { contentDescription = "افزودن ${type.persianName} به بوم" }
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(10.dp)
+                    .size(8.dp)
                     .background(if (isFree) Color(0xFF00E676) else Color(0xFFFFD600), CircleShape)
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = type.defaultPrefix,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 11.sp
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = type.persianName.take(12),
-                color = Color(0xFF94A3B8),
+                text = type.defaultPrefix,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold,
                 fontSize = 10.sp
             )
+            Spacer(modifier = Modifier.width(3.dp))
+            Text(
+                text = type.persianName.take(10),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 9.sp
+            )
             if (!isFree) {
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(3.dp))
                 Text(
                     text = "VIP",
-                    color = Color(0xFFFFD600),
-                    fontSize = 9.sp,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    fontSize = 8.sp,
                     fontWeight = FontWeight.Black
                 )
             }
@@ -2139,19 +1789,19 @@ fun SimYarUnsavedChangesDialog(
     AlertDialog(
         onDismissRequest = onDismissRequest,
         shape = RoundedCornerShape(16.dp),
-        containerColor = Color(0xFF132030),
+        containerColor = MaterialTheme.colorScheme.surface,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Outlined.Warning,
                     contentDescription = null,
-                    tint = Color(0xFFFF9100),
+                    tint = MaterialTheme.colorScheme.tertiary,
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = action.title,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -2160,7 +1810,7 @@ fun SimYarUnsavedChangesDialog(
         text = {
             Text(
                 text = action.message,
-                color = Color(0xFFCFD8DC),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
                 lineHeight = 20.sp
             )
@@ -2171,20 +1821,20 @@ fun SimYarUnsavedChangesDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Text("ذخیره", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text("ذخیره", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 TextButton(
                     onClick = action.onDiscard,
-                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFFF5252))
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("دور انداختن")
                 }
                 TextButton(
                     onClick = action.onCancel,
-                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF90A4AE))
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
                 ) {
                     Text("انصراف")
                 }
@@ -2200,22 +1850,21 @@ fun SimYarDraftRecoveryDialog(
     onDiscard: () -> Unit
 ) {
     AlertDialog(
-        // بستن دیالوگ یا لمس بیرون نباید پیش‌نویس را حذف کند؛ حذف فقط با دکمه صریح انجام می‌شود.
         onDismissRequest = {},
         shape = RoundedCornerShape(16.dp),
-        containerColor = Color(0xFF132030),
+        containerColor = MaterialTheme.colorScheme.surface,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Outlined.History,
                     contentDescription = null,
-                    tint = Color(0xFF00E5FF),
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "بازیابی تغییرات ذخیره‌نشده؟",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -2225,7 +1874,7 @@ fun SimYarDraftRecoveryDialog(
             Column {
                 Text(
                     text = "یک پیش‌نویس ذخیره‌نشده از پروژه «${prompt.draftTitle}» یافت شد. آیا مایل به بازیابی این تغییرات هستید؟",
-                    color = Color(0xFFCFD8DC),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp,
                     lineHeight = 20.sp
                 )
@@ -2233,7 +1882,7 @@ fun SimYarDraftRecoveryDialog(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = warning,
-                        color = Color(0xFFFFC857),
+                        color = MaterialTheme.colorScheme.tertiary,
                         fontSize = 12.sp,
                         lineHeight = 18.sp
                     )
@@ -2241,7 +1890,7 @@ fun SimYarDraftRecoveryDialog(
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = "تعداد قطعات: ${PersianUtils.toPersianDigits(prompt.components.size)} | سیم‌ها: ${PersianUtils.toPersianDigits(prompt.wires.size)} | خطوط لدر: ${PersianUtils.toPersianDigits(prompt.ladderRungs.size)}",
-                    color = Color(0xFF00E5FF),
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = 11.sp
                 )
             }
@@ -2258,7 +1907,7 @@ fun SimYarDraftRecoveryDialog(
         dismissButton = {
             TextButton(
                 onClick = onDiscard,
-                colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFFF5252))
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
             ) {
                 Text("دور انداختن")
             }
@@ -2287,7 +1936,7 @@ fun CableListDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(16.dp),
-        containerColor = Color(0xFF0F1B2B),
+        containerColor = MaterialTheme.colorScheme.surface,
         title = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -2298,13 +1947,13 @@ fun CableListDialog(
                     Icon(
                         imageVector = Icons.Outlined.FormatListNumbered,
                         contentDescription = null,
-                        tint = Color(0xFF00E5FF),
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(22.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "لیست کابل و اتصالات سیم‌کشی",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp
                     )
@@ -2316,8 +1965,8 @@ fun CableListDialog(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("جستجو بر اساس شماره سیم، قطعه یا رنگ...", color = Color(0xFF64748B), fontSize = 11.sp) },
-                    leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(16.dp)) },
+                    placeholder = { Text("جستجو بر اساس شماره سیم، قطعه یا رنگ...", color = MaterialTheme.colorScheme.outline, fontSize = 11.sp) },
+                    leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -2331,22 +1980,22 @@ fun CableListDialog(
                     ) {
                         Text(
                             text = if (cableItems.isEmpty()) "هیچ سیمی در مدار رسم نشده است." else "موردی با این عبارت یافت نشد.",
-                            color = Color(0xFF90A4AE),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp
                         )
                     }
                 } else {
                     Surface(
-                        color = Color(0xFF16253A),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.weight(1f).fillMaxWidth()
                     ) {
                         LazyColumn(modifier = Modifier.fillMaxSize().padding(6.dp)) {
                             items(filtered) { item ->
                                 Surface(
-                                    color = Color(0xFF0F1824),
+                                    color = MaterialTheme.colorScheme.surface,
                                     shape = RoundedCornerShape(6.dp),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x33475569)),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                                     modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
                                 ) {
                                     Column(modifier = Modifier.padding(8.dp)) {
@@ -2357,13 +2006,13 @@ fun CableListDialog(
                                         ) {
                                             Row(verticalAlignment = Alignment.CenterVertically) {
                                                 Surface(
-                                                    color = Color(0xFF00E5FF).copy(alpha = 0.15f),
+                                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                                                     shape = RoundedCornerShape(4.dp),
-                                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF00E5FF).copy(alpha = 0.5f))
+                                                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
                                                 ) {
                                                     Text(
                                                         text = "سیم: ${item.wireNumber}",
-                                                        color = Color(0xFF00E5FF),
+                                                        color = MaterialTheme.colorScheme.primary,
                                                         fontWeight = FontWeight.Bold,
                                                         fontSize = 11.sp,
                                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -2381,14 +2030,14 @@ fun CableListDialog(
                                                 Spacer(modifier = Modifier.width(4.dp))
                                                 Text(
                                                     text = item.colorPresetName,
-                                                    color = Color(0xFFCFD8DC),
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     fontSize = 10.sp
                                                 )
                                             }
 
                                             Text(
                                                 text = "${item.crossSectionMm2} mm²",
-                                                color = Color(0xFFFFD600),
+                                                color = MaterialTheme.colorScheme.tertiary,
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 11.sp
                                             )
@@ -2401,12 +2050,12 @@ fun CableListDialog(
                                         ) {
                                             Text(
                                                 text = "مسیر: ${item.fromComponentLabel}:${item.fromTerminalId}  ←  ${item.toComponentLabel}:${item.toTerminalId}",
-                                                color = Color(0xFF80CBC4),
+                                                color = MaterialTheme.colorScheme.secondary,
                                                 fontSize = 10.sp
                                             )
                                             Text(
                                                 text = "${item.lengthMm.toInt()} mm",
-                                                color = Color(0xFF90A4AE),
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 fontSize = 10.sp
                                             )
                                         }
@@ -2415,7 +2064,7 @@ fun CableListDialog(
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
                                                 text = "بند استاندارد: ${item.standardClause}",
-                                                color = Color(0xFF94A3B8),
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 fontSize = 9.sp
                                             )
                                         }
@@ -2430,22 +2079,21 @@ fun CableListDialog(
         confirmButton = {
             Button(
                 onClick = onExportCsv,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7)),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Icon(Icons.Outlined.FileDownload, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("خروجی CSV", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                Text("خروجی CSV", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
             }
         },
         dismissButton = {
             TextButton(
                 onClick = onDismiss,
-                colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF90A4AE))
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
             ) {
                 Text("بستن")
             }
         }
     )
 }
-
