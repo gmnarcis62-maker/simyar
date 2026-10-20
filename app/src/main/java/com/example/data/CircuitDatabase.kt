@@ -19,7 +19,7 @@ import com.example.model.LadderRung
 import com.example.model.WireConnection
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromJsonElement
+import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 
