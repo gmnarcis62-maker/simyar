@@ -1,0 +1,58 @@
+<resources>
+    <string name="app_name">سیمیار</string>
+    <string name="app_subtitle">طراحی و شبیه‌ساز مدار فرمان برق صنعتی و PLC</string>
+    <string name="app_version">نسخه ۱.۰.۰</string>
+
+    <!-- تب‌های ناوبری -->
+    <string name="nav_projects">پروژه‌ها</string>
+    <string name="nav_editor">ویرایشگر</string>
+    <string name="nav_plc">پی‌ال‌سی</string>
+    <string name="nav_academy">آموزشگاه</string>
+    <string name="nav_settings">تنظیمات</string>
+    <string name="nav_about_us">درباره ما</string>
+
+    <!-- دکمه‌ها و اکشن‌ها -->
+    <string name="action_save">ذخیره</string>
+    <string name="action_load">بارگذاری</string>
+    <string name="action_run">اجرا</string>
+    <string name="action_stop">توقف</string>
+    <string name="action_step">گام بعدی</string>
+    <string name="action_undo">بازگشت</string>
+    <string name="action_redo">تکرار</string>
+    <string name="action_copy">کپی</string>
+    <string name="action_paste">پیست</string>
+    <string name="action_rotate">چرخش</string>
+    <string name="action_lock">قفل</string>
+    <string name="action_delete">حذف</string>
+    <string name="action_snap_grid">چسبیدن به شبکه</string>
+    <string name="action_reset_view">ریست دید</string>
+    <string name="action_library">کتابخانه کامل</string>
+
+    <!-- پیام‌ها و خطاها -->
+    <string name="status_circuit_ready">مدار آماده تست و شبیه‌سازی</string>
+    <string name="status_circuit_stopped">شبیه‌سازی متوقف شد</string>
+    <string name="err_short_circuit">خطای بحرانی: اتصال کوتاه فاز به نول رخ داد!</string>
+    <string name="err_interlock_violation">خطای اینترلاک: کنتاکتورهای مخالف همزمان فعال شدند!</string>
+    <string name="err_open_circuit">مدار باز: مسیر تداوم جریان کامل نیست.</string>
+    <string name="exit_press_again">برای خروج از برنامه، مجدداً دکمه بازگشت را بزنید</string>
+
+    <!-- خرید درون‌برنامه‌ای مایکت -->
+    <string name="vip_upgrade_title">ارتقا به نسخه حرفه‌ای (VIP)</string>
+    <string name="vip_upgrade_subtitle">دسترسی مادام‌العمر به امکانات مهندسی</string>
+    <string name="vip_purchase_btn">خرید درون‌برنامه‌ای مایکت</string>
+    <string name="vip_restore_btn">بازیابی خرید</string>
+    <string name="vip_purchase_success">خرید با موفقیت انجام شد! اشتراک طلایی فعال گردید.</string>
+    <string name="vip_already_owned">این محصول قبلاً خریداری شده است. اشتراک VIP فعال شد.</string>
+    <string name="vip_not_connected">ارتباط با برنامه مایکت برقرار نیست. لطفاً از نصب و باز بودن مایکت مطمئن شوید.</string>
+    <string name="vip_price_error">دریافت قیمت ممکن نشد</string>
+    <string name="vip_retry_price">تلاش دوباره</string>
+    <string name="vip_debug_unlock">تست توسعه‌دهنده (Debug VIP)</string>
+    <string name="vip_limit_reached">محدودیت نسخه رایگان: حداکثر ۳ پروژه مجاز است. برای ادامه به نسخه VIP ارتقا دهید.</string>
+
+    <!-- درباره ما -->
+    <string name="developer_team">تیم نرم‌افزاری ردلاین سافت البرز</string>
+    <string name="management_name">مهندس مهدی رضایی</string>
+    <string name="support_email">gmnarcis@gmail.com</string>
+    <string name="myket_comment">ثبت نظر و امتیاز در مایکت</string>
+    <string name="myket_other_apps">دیگر برنامه‌های ما در مایکت</string>
+</resources>

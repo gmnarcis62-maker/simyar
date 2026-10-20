@@ -1,0 +1,6 @@
+{
+  "name": "سیمیار",
+  "description": "نرم‌افزار طراحی مدار فرمان و قدرت برق صنعتی و شبیه‌ساز PLC با زبان Ladder",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
