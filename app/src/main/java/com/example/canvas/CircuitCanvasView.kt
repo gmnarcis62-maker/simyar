@@ -8,6 +8,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -16,16 +17,15 @@ import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.FitScreen
 import androidx.compose.material.icons.outlined.Fullscreen
 import androidx.compose.material.icons.outlined.FullscreenExit
-import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -37,7 +37,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
@@ -107,8 +110,8 @@ fun CircuitCanvasView(
     onDeleteWire: (String) -> Unit = {},
     isFullscreen: Boolean = false,
     onToggleFullscreen: (() -> Unit)? = null,
-    onZoomIn: (() -> Unit)? = null,
-    onZoomOut: (() -> Unit)? = null,
+    onZoomIn: (() -> Unit)? = null, 
+    onZoomOut: (() -> Unit)? = null, 
     onFitToScreen: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -120,7 +123,6 @@ fun CircuitCanvasView(
     var selectionBoxStart by remember { mutableStateOf<Offset?>(null) }
     var selectionBoxCurrent by remember { mutableStateOf<Offset?>(null) }
 
-    // استفاده از rememberUpdatedState برای جلوگیری از باطل‌شدن مداوم Gesture pointerInput
     val currentComponents by rememberUpdatedState(components)
     val currentWires by rememberUpdatedState(wires)
     val currentScale by rememberUpdatedState(scaleFactor)
@@ -132,23 +134,22 @@ fun CircuitCanvasView(
     val isSmartGuidesEnabledState by rememberUpdatedState(isSmartGuidesEnabled)
     val currentLockedLayerIds by rememberUpdatedState(lockedLayerIds)
 
-    // انیمیشن ۶۰fps حرکت ذرات الکتریکی روی سیم‌های برق‌دار
     val infiniteTransition = rememberInfiniteTransition(label = "current_flow")
     val flowPhase by infiniteTransition.animateFloat(
         initialValue = 0f,
-        targetValue = 20f,
+        targetValue = 40f, // طول مسیر بیشتر برای افکت بهتر
         animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = LinearEasing),
+            animation = tween(1000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "phase"
     )
 
     val haloPulse by infiniteTransition.animateFloat(
-        initialValue = 18f,
-        targetValue = 26f,
+        initialValue = 20f,
+        targetValue = 30f,
         animationSpec = infiniteRepeatable(
-            animation = tween(600, easing = LinearEasing),
+            animation = tween(800, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "halo"
@@ -169,7 +170,6 @@ fun CircuitCanvasView(
         }
     }
 
-    // تابع بررسی اصابت (Hit-Test) با در نظر گرفتن ابعاد و چرخش دقیق قطعه
     fun hitTestComponent(comp: CircuitComponent, canvasPoint: Offset): Boolean {
         val cx = comp.x + COMPONENT_WIDTH / 2f
         val cy = comp.y + COMPONENT_HEIGHT / 2f
@@ -185,7 +185,6 @@ fun CircuitCanvasView(
                 localY in comp.y..(comp.y + COMPONENT_HEIGHT)
     }
 
-    // تابع فاصله‌سنجی لمس از پاره‌خط سیم برای انتخاب سیم
     fun distanceToSegment(p: Offset, a: Offset, b: Offset): Float {
         val l2 = (b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y)
         if (l2 == 0f) return (p - a).getDistance()
@@ -205,24 +204,27 @@ fun CircuitCanvasView(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF061426))
+            .background(
+                Brush.radialGradient(
+                    colors = listOf(Color(0xFF0F1C2E), Color(0xFF040A12)),
+                    center = Offset.Unspecified,
+                    radius = 2500f
+                )
+            )
             .semantics { contentDescription = "بوم طراحی و شبیه‌سازی مدار الکتریکی سیمیار" }
     ) {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                // ۱. ژست‌های زوم و پن دو انگشتی حول مرکز اشاره‌گر
                 .pointerInput(Unit) {
                     detectTransformGestures { centroid, pan, zoom, _ ->
                         val oldScale = currentScale
                         val newScale = (oldScale * zoom).coerceIn(minAllowedScale, maxAllowedScale)
-                        // زوم دقیق حول مرکز انگشتان
                         val newPanX = centroid.x - (centroid.x - currentPanX) * (newScale / oldScale) + pan.x
                         val newPanY = centroid.y - (centroid.y - currentPanY) * (newScale / oldScale) + pan.y
                         onTransformChange(newScale, newPanX, newPanY)
                     }
                 }
-                // ۲. لمس و تپ روی شستی‌ها، ترمینال‌ها و قطعات
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onPress = { rawTapOffset ->
@@ -273,7 +275,6 @@ fun CircuitCanvasView(
                             )
 
                             if (!isSimRunningState) {
-                                // در حالت انتخاب چندتایی، تپ روی قطعه وضعیت انتخاب آن را تاگل می‌کند
                                 if (isMultiSelectModeState) {
                                     val tapped = sheetComponents.find { comp -> hitTestComponent(comp, tapOffset) }
                                     if (tapped != null) {
@@ -289,7 +290,6 @@ fun CircuitCanvasView(
                                     return@detectTapGestures
                                 }
 
-                                // ۱. بررسی ترمینال با اولویت نزدیک‌ترین ترمینال بر اساس شعاع تطبیقی لمس (حدود ۲۲dp استاندارد)
                                 var nearestTerminal: SelectedTerminal? = null
                                 val terminalRadius = CanvasFitCalculator.calculateTerminalTouchRadius(
                                     scale = currentScale,
@@ -329,14 +329,12 @@ fun CircuitCanvasView(
                                     }
                                     onSelectWire(null)
                                 } else {
-                                    // ۲. بررسی لمس بدنه قطعه
                                     val tapped = sheetComponents.find { comp -> hitTestComponent(comp, tapOffset) }
                                     if (tapped != null) {
                                         onSelectComponent(tapped.id)
                                         onSelectWire(null)
                                         pendingTerminal = null
                                     } else {
-                                        // ۳. بررسی لمس سیم‌ها جهت انتخاب یا حذف سیم
                                         var clickedWire: WireConnection? = null
                                         val wireThreshold = 18f
                                         for (wire in sheetWires) {
@@ -382,7 +380,6 @@ fun CircuitCanvasView(
                         }
                     )
                 }
-                // ۳. جابجایی قطعات و کادر کشیدنی انتخاب
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragStart = { rawStartOffset ->
@@ -510,30 +507,45 @@ fun CircuitCanvasView(
             translate(panOffsetX, panOffsetY) {
                 scale(scaleFactor, pivot = Offset.Zero) {
 
-                    // ۱. رسم بهینه شبکه گرید (فقط در محدوده دید بوم)
-                    val gridStep = 40f
-                    val gridColor = Color(0x1500F0FF)
+                    // ⭐️ ۱. گرید حرفه‌ای مهندسی (Blueprint Style)
+                    val majorGridStep = 100f
+                    val minorGridStep = 20f
+                    val majorGridColor = Color(0x2500E5FF)
+                    val minorGridColor = Color(0x0AFFFFFF)
 
-                    val visibleLeft = ((-panOffsetX) / scaleFactor) - 80f
-                    val visibleTop = ((-panOffsetY) / scaleFactor) - 80f
-                    val visibleRight = ((size.width - panOffsetX) / scaleFactor) + 80f
-                    val visibleBottom = ((size.height - panOffsetY) / scaleFactor) + 80f
+                    val visibleLeft = ((-panOffsetX) / scaleFactor) - 100f
+                    val visibleTop = ((-panOffsetY) / scaleFactor) - 100f
+                    val visibleRight = ((size.width - panOffsetX) / scaleFactor) + 100f
+                    val visibleBottom = ((size.height - panOffsetY) / scaleFactor) + 100f
 
-                    val startX = (visibleLeft / gridStep).toInt() * gridStep
-                    val startY = (visibleTop / gridStep).toInt() * gridStep
-
-                    var gx = startX
-                    while (gx <= visibleRight) {
-                        drawLine(gridColor, Offset(gx, visibleTop), Offset(gx, visibleBottom), strokeWidth = 1f)
-                        gx += gridStep
+                    // رسم نقاط ریز
+                    val startXMinor = (visibleLeft / minorGridStep).toInt() * minorGridStep
+                    val startYMinor = (visibleTop / minorGridStep).toInt() * minorGridStep
+                    var gxMin = startXMinor
+                    while (gxMin <= visibleRight) {
+                        var gyMin = startYMinor
+                        while (gyMin <= visibleBottom) {
+                            drawCircle(color = minorGridColor, radius = 1.5f, center = Offset(gxMin, gyMin))
+                            gyMin += minorGridStep
+                        }
+                        gxMin += minorGridStep
                     }
-                    var gy = startY
-                    while (gy <= visibleBottom) {
-                        drawLine(gridColor, Offset(visibleLeft, gy), Offset(visibleRight, gy), strokeWidth = 1f)
-                        gy += gridStep
+
+                    // رسم خطوط اصلی
+                    val startXMajor = (visibleLeft / majorGridStep).toInt() * majorGridStep
+                    val startYMajor = (visibleTop / majorGridStep).toInt() * majorGridStep
+                    var gxMaj = startXMajor
+                    while (gxMaj <= visibleRight) {
+                        drawLine(majorGridColor, Offset(gxMaj, visibleTop), Offset(gxMaj, visibleBottom), strokeWidth = 1f)
+                        gxMaj += majorGridStep
+                    }
+                    var gyMaj = startYMajor
+                    while (gyMaj <= visibleBottom) {
+                        drawLine(majorGridColor, Offset(visibleLeft, gyMaj), Offset(visibleRight, gyMaj), strokeWidth = 1f)
+                        gyMaj += majorGridStep
                     }
 
-                    // ۲. رسم سیم‌های مدار با افکت نئونی، رنگ استاندارد و برچسب شماره نت (Pill)
+                    // ⭐️ ۲. سیم‌ها با افکت نئون و سایه (Glow & Shadow)
                     for (wire in sheetWires) {
                         val fromComp = sheetComponents.find { it.id == wire.fromComponentId }
                         val toComp = sheetComponents.find { it.id == wire.toComponentId }
@@ -555,7 +567,7 @@ fun CircuitCanvasView(
                                 }
 
                                 val wireColor = when {
-                                    isSelectedWire -> Color(0xFFFF9100) // رنگ نارنجی هنگام انتخاب سیم
+                                    isSelectedWire -> Color(0xFFFF9100)
                                     isLive -> Color(0xFF00E676)
                                     else -> parsedWireColor
                                 }
@@ -574,21 +586,31 @@ fun CircuitCanvasView(
                                     }
                                 }
 
+                                // سایه زیر سیم
+                                drawPath(
+                                    path = path,
+                                    color = Color(0x66000000),
+                                    style = Stroke(width = if (isSelectedWire) 7f else 5f, cap = StrokeCap.Round)
+                                )
+
                                 if (isLive) {
-                                    // هاله نئونی اطراف سیم در ۶۰fps
                                     drawPath(
                                         path = path,
                                         color = Color(0x4000E676),
-                                        style = Stroke(width = 8f, cap = StrokeCap.Round)
+                                        style = Stroke(width = 12f, cap = StrokeCap.Round)
                                     )
-                                    // خط متحرک پالس جریان الکتریکی
+                                    drawPath(
+                                        path = path,
+                                        color = Color(0x8000E676),
+                                        style = Stroke(width = 6f, cap = StrokeCap.Round)
+                                    )
                                     drawPath(
                                         path = path,
                                         color = Color.White,
                                         style = Stroke(
-                                            width = 3.5f,
+                                            width = 2f,
                                             cap = StrokeCap.Round,
-                                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 16f), flowPhase)
+                                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 15f), flowPhase)
                                         )
                                     )
                                 }
@@ -596,13 +618,14 @@ fun CircuitCanvasView(
                                 drawPath(
                                     path = path,
                                     color = wireColor,
-                                    style = Stroke(width = if (isSelectedWire) 5.5f else 3.5f, cap = StrokeCap.Round)
+                                    style = Stroke(width = if (isSelectedWire) 5f else 3f, cap = StrokeCap.Round)
                                 )
 
                                 drawCircle(color = wireColor, radius = if (isSelectedWire) 7f else 5f, center = start)
+                                drawCircle(color = Color.White.copy(alpha = 0.8f), radius = if (isSelectedWire) 3f else 2f, center = start)
                                 drawCircle(color = wireColor, radius = if (isSelectedWire) 7f else 5f, center = end)
+                                drawCircle(color = Color.White.copy(alpha = 0.8f), radius = if (isSelectedWire) 3f else 2f, center = end)
 
-                                // رسم برچسب کپسولی شماره سیم (Pill) در صورت فعال بودن نمایش شماره‌ها
                                 if (showWireNumbers && wire.wireNumber.isNotBlank() && wireOffsets.size >= 2) {
                                     val midIdx = wireOffsets.size / 2
                                     val pillCenter = if (wireOffsets.size % 2 == 1) {
@@ -625,7 +648,7 @@ fun CircuitCanvasView(
                                         }
                                         val textBounds = android.graphics.Rect()
                                         textPaint.getTextBounds(text, 0, text.length, textBounds)
-                                        val pillWidth = maxOf(textBounds.width() + 14f, 22f)
+                                        val pillWidth = maxOf(textBounds.width() + 12f, 20f)
                                         val pillHeight = 14f
 
                                         val bgPaint = Paint().apply {
@@ -636,7 +659,7 @@ fun CircuitCanvasView(
                                         val borderPaint = Paint().apply {
                                             color = if (isSelectedWire) android.graphics.Color.parseColor("#FF9100") else android.graphics.Color.parseColor("#00E5FF")
                                             style = Paint.Style.STROKE
-                                            strokeWidth = 1.5f
+                                            strokeWidth = 1f
                                             isAntiAlias = true
                                         }
 
@@ -646,8 +669,8 @@ fun CircuitCanvasView(
                                         val bottom = pillCenter.y + pillHeight / 2f
 
                                         val rectF = android.graphics.RectF(left, top, right, bottom)
-                                        canvas.nativeCanvas.drawRoundRect(rectF, 6f, 6f, bgPaint)
-                                        canvas.nativeCanvas.drawRoundRect(rectF, 6f, 6f, borderPaint)
+                                        canvas.nativeCanvas.drawRoundRect(rectF, 4f, 4f, bgPaint)
+                                        canvas.nativeCanvas.drawRoundRect(rectF, 4f, 4f, borderPaint)
 
                                         val textBaseline = pillCenter.y + (textBounds.height() / 2f) - 1f
                                         canvas.nativeCanvas.drawText(text, pillCenter.x, textBaseline, textPaint)
@@ -657,7 +680,6 @@ fun CircuitCanvasView(
                         }
                     }
 
-                    // خطوط راهنمای هوشمند هم‌ترازی (Smart Guides)
                     for (guide in activeGuides) {
                         val guideColor = Color(0xFFFF4081)
                         if (guide.isVertical) {
@@ -665,21 +687,20 @@ fun CircuitCanvasView(
                                 color = guideColor,
                                 start = Offset(guide.position, guide.startCoord),
                                 end = Offset(guide.position, guide.endCoord),
-                                strokeWidth = 1.5f,
-                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f))
+                                strokeWidth = 1f,
+                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f))
                             )
                         } else {
                             drawLine(
                                 color = guideColor,
                                 start = Offset(guide.startCoord, guide.position),
                                 end = Offset(guide.endCoord, guide.position),
-                                strokeWidth = 1.5f,
-                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f))
+                                strokeWidth = 1f,
+                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f))
                             )
                         }
                     }
 
-                    // ترمینال در حال سیم‌کشی با هاله متحرک
                     pendingTerminal?.let { pending ->
                         val pComp = sheetComponents.find { it.id == pending.componentId }
                         if (pComp != null) {
@@ -687,24 +708,31 @@ fun CircuitCanvasView(
                             if (pTerm != null) {
                                 val start = Offset(pComp.x + pTerm.relX, pComp.y + pTerm.relY)
                                 drawCircle(
-                                    color = Color(0x66FFD600),
+                                    color = Color(0x33FFD600),
                                     radius = haloPulse,
                                     center = start
                                 )
                                 drawCircle(
                                     color = Color(0xFFFFD600),
-                                    radius = 14f,
+                                    radius = 10f,
                                     center = start,
-                                    style = Stroke(width = 2.5f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f)))
+                                    style = Stroke(width = 2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f)))
                                 )
                             }
                         }
                     }
 
-                    // ۳. رسم قطعات صنعتی
+                    // ⭐️ ۳. قطعات با سایه 3D
                     for (comp in sheetComponents) {
                         val activeTermId = if (pendingTerminal?.componentId == comp.id) pendingTerminal?.terminal?.id else null
                         val isCompSelected = (comp.id == selectedComponentId) || (comp.id in currentSelectedIds)
+
+                        drawRoundRect(
+                            color = Color(0x44000000),
+                            topLeft = Offset(comp.x - 2f, comp.y - 2f),
+                            size = Size(COMPONENT_WIDTH + 4f, COMPONENT_HEIGHT + 4f),
+                            cornerRadius = CornerRadius(8f, 8f)
+                        )
 
                         CircuitComponentDrawer.drawComponent(
                             scope = this,
@@ -715,19 +743,18 @@ fun CircuitCanvasView(
                             density = safeDensity
                         )
 
-                        // هایلایت نئونی قطعه ناشی از جستجوی بوم
                         if (comp.id == highlightedComponentId) {
                             drawRoundRect(
                                 color = Color(0xFFFFD600),
-                                topLeft = Offset(comp.x - 8f, comp.y - 8f),
-                                size = androidx.compose.ui.geometry.Size(COMPONENT_WIDTH + 16f, COMPONENT_HEIGHT + 16f),
-                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(10f, 10f),
-                                style = Stroke(width = 3.5f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f)))
+                                topLeft = Offset(comp.x - 6f, comp.y - 6f),
+                                size = Size(COMPONENT_WIDTH + 12f, COMPONENT_HEIGHT + 12f),
+                                cornerRadius = CornerRadius(10f, 10f),
+                                style = Stroke(width = 2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f)))
                             )
                         }
                     }
 
-                    // ۴. رسم کادر مستطیلی انتخاب کشیدنی (Marquee Selection Box)
+                    // ⭐️ ۴. کادر انتخاب حرفه‌ای
                     if (selectionBoxStart != null && selectionBoxCurrent != null) {
                         val bStart = selectionBoxStart!!
                         val bCurr = selectionBoxCurrent!!
@@ -737,84 +764,62 @@ fun CircuitCanvasView(
                         val height = kotlin.math.abs(bCurr.y - bStart.y)
 
                         drawRect(
-                            color = Color(0x3300E5FF),
+                            color = Color(0x2000E5FF),
                             topLeft = Offset(left, top),
-                            size = androidx.compose.ui.geometry.Size(width, height)
+                            size = Size(width, height)
                         )
                         drawRect(
                             color = Color(0xFF00E5FF),
                             topLeft = Offset(left, top),
-                            size = androidx.compose.ui.geometry.Size(width, height),
-                            style = Stroke(width = 1.5f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f)))
+                            size = Size(width, height),
+                            style = Stroke(width = 1.5f)
                         )
+                        drawCircle(color = Color.White, radius = 3f, center = Offset(left, top))
+                        drawCircle(color = Color.White, radius = 3f, center = Offset(left + width, top))
+                        drawCircle(color = Color.White, radius = 3f, center = Offset(left, top + height))
+                        drawCircle(color = Color.White, radius = 3f, center = Offset(left + width, top + height))
                     }
                 }
             }
         }
 
-        // پنل شناور ابزارهای کنترل بوم (تمام‌صفحه، زوم و نمایش کل مدار)
+        // ⭐️ ۵. پنل شیشه‌ای شناور (Glassmorphism HUD)
         Surface(
-            color = Color(0xDD0C1626),
-            shape = RoundedCornerShape(12.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x4000E5FF)),
+            color = Color.White.copy(alpha = 0.05f),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(14.dp)
+                .padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(4.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Row(
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 if (onToggleFullscreen != null) {
                     IconButton(
                         onClick = onToggleFullscreen,
-                        modifier = Modifier.size(34.dp)
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             imageVector = if (isFullscreen) Icons.Outlined.FullscreenExit else Icons.Outlined.Fullscreen,
                             contentDescription = if (isFullscreen) "خروج از تمام صفحه" else "تمام صفحه شدن بوم",
-                            tint = Color(0xFF00E5FF),
+                            tint = Color.White.copy(alpha = 0.8f),
                             modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-                if (onZoomIn != null) {
-                    IconButton(
-                        onClick = onZoomIn,
-                        modifier = Modifier.size(34.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Add,
-                            contentDescription = "بزرگ‌نمایی بوم",
-                            tint = Color.White,
-                            modifier = Modifier.size(19.dp)
-                        )
-                    }
-                }
-                if (onZoomOut != null) {
-                    IconButton(
-                        onClick = onZoomOut,
-                        modifier = Modifier.size(34.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Remove,
-                            contentDescription = "کوچک‌نمایی بوم",
-                            tint = Color.White,
-                            modifier = Modifier.size(19.dp)
                         )
                     }
                 }
                 if (onFitToScreen != null) {
                     IconButton(
                         onClick = onFitToScreen,
-                        modifier = Modifier.size(34.dp)
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.FitScreen,
                             contentDescription = "نمایش کل مدار (Fit)",
-                            tint = Color(0xFFFFD600),
-                            modifier = Modifier.size(17.dp)
+                            tint = Color(0xFF00E5FF),
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }

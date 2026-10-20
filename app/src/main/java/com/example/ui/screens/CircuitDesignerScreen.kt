@@ -429,7 +429,7 @@ fun CircuitDesignerScreen(
                                 Box(
                                     modifier = Modifier
                                         .background(
-                                            if (isSelected) Color(0xFF0284C7) else Color(0xFF1E293B),
+                                            if (isSelected) Color(0xFF0284C7) else MaterialTheme.colorScheme.surfaceVariant,
                                             RoundedCornerShape(6.dp)
                                         )
                                         .clickable { activeToolbarTab = tab }
@@ -640,7 +640,7 @@ fun CircuitDesignerScreen(
                                     // دکمه باز کردن جدول لیست کابل
                                     Button(
                                         onClick = { showCableListDialog = true },
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293B)),
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                                         shape = RoundedCornerShape(6.dp),
                                         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                                         modifier = Modifier.semantics { contentDescription = "مشاهده جدول لیست کابل و استخراج CSV" }
@@ -660,7 +660,7 @@ fun CircuitDesignerScreen(
                                 ) {
                                     Button(
                                         onClick = { viewModel.executeSingleStepSimulation() },
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293B)),
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                                         shape = RoundedCornerShape(6.dp),
                                         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                                         modifier = Modifier.semantics { contentDescription = "اجرای تک گام شبیه‌سازی مدار" }
@@ -678,7 +678,7 @@ fun CircuitDesignerScreen(
                                     Box(
                                         modifier = Modifier
                                             .clickable { viewModel.setSimulationSpeed(nextSpeed) }
-                                            .background(Color(0xFF1E293B), RoundedCornerShape(6.dp))
+                                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(6.dp))
                                             .padding(horizontal = 8.dp, vertical = 4.dp)
                                             .semantics { contentDescription = "تنظیم سرعت شبیه‌سازی: ${simSpeed}x" }
                                     ) {
@@ -699,7 +699,7 @@ fun CircuitDesignerScreen(
                                             viewModel.refreshAvailableTimingSignals()
                                             showTimingDialog = true
                                         },
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293B)),
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                                         shape = RoundedCornerShape(6.dp),
                                         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                                         modifier = Modifier
@@ -812,7 +812,7 @@ fun CircuitDesignerScreen(
                         }
 
                         Surface(
-                            color = if (isMultiSelectMode) Color(0xFFFF9100) else Color(0xFF1E293B),
+                            color = if (isMultiSelectMode) Color(0xFFFF9100) else MaterialTheme.colorScheme.surfaceVariant,
                             shape = RoundedCornerShape(6.dp),
                             border = if (isMultiSelectMode) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFD600)) else null,
                             modifier = Modifier
@@ -848,7 +848,7 @@ fun CircuitDesignerScreen(
             // بنر عملیات گروهی در حالت انتخاب چندتایی
             if (isMultiSelectMode) {
                 Surface(
-                    color = Color(0xFF1E293B),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     tonalElevation = 4.dp,
                     border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFF9100).copy(alpha = 0.5f)),
                     modifier = Modifier.fillMaxWidth()
@@ -1301,7 +1301,7 @@ fun CircuitDesignerScreen(
                                         ).forEach { (catKey, catLabel) ->
                                             val isCatSel = colorCategory == catKey
                                             Surface(
-                                                color = if (isCatSel) Color(0xFF0284C7) else Color(0xFF1E293B),
+                                                color = if (isCatSel) Color(0xFF0284C7) else MaterialTheme.colorScheme.surfaceVariant,
                                                 shape = RoundedCornerShape(4.dp),
                                                 modifier = Modifier
                                                     .weight(1f)
@@ -1381,7 +1381,7 @@ fun CircuitDesignerScreen(
                                         items(commonSections) { cs ->
                                             val isChosen = selectedWire.crossSectionMm2 == cs
                                             Surface(
-                                                color = if (isChosen) Color(0xFF00B0FF) else Color(0xFF1E293B),
+                                                color = if (isChosen) Color(0xFF00B0FF) else MaterialTheme.colorScheme.surfaceVariant,
                                                 shape = RoundedCornerShape(4.dp),
                                                 modifier = Modifier.clickable {
                                                     viewModel.updateWireCrossSection(selectedWire.id, cs)
@@ -1725,7 +1725,7 @@ fun CircuitDesignerScreen(
                                 showSheetOptionsSheetId = null
                                 Toast.makeText(context, "برگه با موفقیت تکثیر شد", Toast.LENGTH_SHORT).show()
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293B)),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Icon(Icons.Outlined.CopyAll, contentDescription = null, tint = Color(0xFF00E5FF), modifier = Modifier.size(16.dp))
@@ -2044,7 +2044,7 @@ fun CircuitDesignerScreen(
                             layers.forEach { l ->
                                 val isAssigned = selectedComponent.layerId == l.id
                                 Surface(
-                                    color = if (isAssigned) Color(0xFF0284C7) else Color(0xFF1E293B),
+                                    color = if (isAssigned) Color(0xFF0284C7) else MaterialTheme.colorScheme.surfaceVariant,
                                     shape = RoundedCornerShape(6.dp),
                                     modifier = Modifier
                                         .weight(1f)

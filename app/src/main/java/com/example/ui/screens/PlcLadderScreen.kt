@@ -6,6 +6,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -42,6 +44,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -143,304 +146,288 @@ fun PlcLadderScreen(
 
     Column(modifier = modifier.fillMaxSize()) {
         if (!isFullscreen) {
-            // ۱. نوار بالای کنترل پردازنده PLC و وضعیت سخت‌افزار
+            // ۱. نوار بالای کنترل پردازنده PLC و وضعیت سخت‌افزار (فشرده‌شده)
             Surface(
-                color = Color(0xFF141D2B),
-                tonalElevation = 4.dp,
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 2.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "شبیه‌ساز و بوم PLC نردبانی",
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                                if (isDirty) {
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f),
+                                        shape = RoundedCornerShape(2.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary)
+                                    ) {
+                                        Text(
+                                            text = "ذخیره‌نشده",
+                                            color = MaterialTheme.colorScheme.tertiary,
+                                            fontSize = 8.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
+                                        )
+                                    }
+                                }
+                            }
                             Text(
-                                text = "شبیه‌ساز و بوم ترسیم PLC نردبانی (IEC 61131-3)",
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
+                                text = "رانگ‌ها: ${PersianUtils.toPersianDigits(rungs.size)} | اسکن: ${PersianUtils.toPersianDigits(scanTimeMs)} ms",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 9.sp
                             )
-                            if (isDirty) {
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Surface(
-                                    color = Color(0xFFFF9100).copy(alpha = 0.2f),
-                                    shape = RoundedCornerShape(4.dp),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFF9100))
+                        }
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.horizontalScroll(rememberScrollState())
+                        ) {
+                            Button(
+                                onClick = { viewModel.togglePlcSimulation() },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (isPlcRunning) Color(0xFFD50000) else Color(0xFF00E676)
+                                ),
+                                shape = RoundedCornerShape(4.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                                modifier = Modifier
+                                    .height(28.dp)
+                                    .testTag("toggle_plc_button")
+                                    .semantics { contentDescription = if (isPlcRunning) "توقف PLC" else "اجرای PLC" }
+                            ) {
+                                Icon(
+                                    imageVector = if (isPlcRunning) Icons.Default.Stop else Icons.Default.PlayArrow,
+                                    contentDescription = null,
+                                    tint = if (isPlcRunning) Color.White else Color.Black,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text(
+                                    text = if (isPlcRunning) "STOP" else "RUN",
+                                    color = if (isPlcRunning) Color.White else Color.Black,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp
+                                )
+                            }
+
+                            Button(
+                                onClick = {
+                                    viewModel.addLadderRung()
+                                    Toast.makeText(context, "رانگ جدید اضافه شد", Toast.LENGTH_SHORT).show()
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                shape = RoundedCornerShape(4.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                                modifier = Modifier
+                                    .height(28.dp)
+                                    .semantics { contentDescription = "افزودن رانگ" }
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text("رانگ", color = MaterialTheme.colorScheme.onPrimary, fontSize = 10.sp)
+                            }
+
+                            Button(
+                                onClick = {
+                                    viewModel.refreshAvailableTimingSignals()
+                                    showTimingDialog = true
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                                shape = RoundedCornerShape(4.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                                modifier = Modifier
+                                    .height(28.dp)
+                                    .testTag("open_plc_timing_button")
+                            ) {
+                                Icon(Icons.Default.Timeline, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text("نمودار", color = MaterialTheme.colorScheme.primary, fontSize = 10.sp)
+                            }
+
+                            IconButton(
+                                onClick = { isFullscreen = !isFullscreen },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isFullscreen) Icons.Outlined.FullscreenExit else Icons.Outlined.Fullscreen,
+                                    contentDescription = "تمام صفحه",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val inputList = listOf("I0.0", "I0.1", "I0.2", "I0.3")
+                        items(inputList) { inp ->
+                            val active = plcMemory.inputs[inp] ?: false
+                            Card(
+                                shape = RoundedCornerShape(4.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (active) Color(0xFF00E676) else MaterialTheme.colorScheme.surfaceVariant
+                                ),
+                                modifier = Modifier
+                                    .clickable { viewModel.togglePlcInput(inp) }
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .background(if (active) Color.White else MaterialTheme.colorScheme.outline, CircleShape)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = "ذخیره‌نشده",
-                                        color = Color(0xFFFFB74D),
-                                        fontSize = 9.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                        text = "$inp (${if (active) "۱" else "۰"})",
+                                        color = if (active) Color.Black else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 9.sp
                                     )
                                 }
                             }
                         }
-                        Text(
-                            text = "رانگ‌ها: ${PersianUtils.toPersianDigits(rungs.size)} | زمان اسکن: ${PersianUtils.toPersianDigits(scanTimeMs)} ms",
-                            color = Color(0xFF00E5FF),
-                            fontSize = 11.sp
-                        )
-                    }
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Button(
-                            onClick = { viewModel.togglePlcSimulation() },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isPlcRunning) Color(0xFFD50000) else Color(0xFF00E676)
-                            ),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier
-                                .testTag("toggle_plc_button")
-                                .semantics { contentDescription = if (isPlcRunning) "توقف پردازشگر PLC" else "اجرای برنامه نردبانی PLC" }
-                        ) {
-                            Icon(
-                                imageVector = if (isPlcRunning) Icons.Default.Stop else Icons.Default.PlayArrow,
-                                contentDescription = null,
-                                tint = if (isPlcRunning) Color.White else Color.Black
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = if (isPlcRunning) "PLC STOP" else "PLC RUN",
-                                color = if (isPlcRunning) Color.White else Color.Black,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp
-                            )
-                        }
-
-                        Button(
-                            onClick = {
-                                viewModel.addLadderRung()
-                                Toast.makeText(context, "رانگ لدر جدید اضافه شد", Toast.LENGTH_SHORT).show()
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.semantics { contentDescription = "افزودن رانگ جدید به برنامه لدر" }
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("افزودن رانگ", color = Color.White, fontSize = 11.sp)
-                        }
-
-                        Button(
-                            onClick = {
-                                viewModel.refreshAvailableTimingSignals()
-                                showTimingDialog = true
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293B)),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier
-                                .testTag("open_plc_timing_button")
-                                .semantics { contentDescription = "مشاهده نمودار زمانی سیگنال‌های PLC" }
-                        ) {
-                            Icon(Icons.Default.Timeline, contentDescription = null, tint = Color(0xFF00E5FF), modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("نمودار زمانی", color = Color(0xFF00E5FF), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        }
-
-                        IconButton(
-                            onClick = { isFullscreen = !isFullscreen },
-                            modifier = Modifier
-                                .size(36.dp)
-                                .semantics { contentDescription = if (isFullscreen) "خروج از تمام صفحه" else "تمام صفحه شدن بوم لدر" }
-                        ) {
-                            Icon(
-                                imageVector = if (isFullscreen) Icons.Outlined.FullscreenExit else Icons.Outlined.Fullscreen,
-                                contentDescription = null,
-                                tint = Color(0xFF00E5FF)
-                            )
-                        }
-                    }
-                }
-
-                // نوار وضعیت ورودی‌ها و خروجی‌های دیجیتال
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "جدول تگ‌های سخت‌افزاری PLC (ورودی‌های I و خروجی‌های Q) - کلیک برای تغییر دستی:",
-                    color = Color(0xFFB0BEC5),
-                    fontSize = 11.sp
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    val inputList = listOf("I0.0", "I0.1", "I0.2", "I0.3")
-                    items(inputList) { inp ->
-                        val active = plcMemory.inputs[inp] ?: false
-                        Card(
-                            shape = RoundedCornerShape(8.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (active) Color(0xFF00E676) else Color(0xFF263238)
-                            ),
-                            modifier = Modifier
-                                .clickable { viewModel.togglePlcInput(inp) }
-                                .semantics { contentDescription = "ورودی سخت‌افزاری $inp: ${if (active) "یک منطقی" else "صفر منطقی"}" }
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                        val outputList = listOf("Q0.0", "Q0.1", "Q0.2")
+                        items(outputList) { out ->
+                            val active = plcMemory.outputs[out] ?: false
+                            Card(
+                                shape = RoundedCornerShape(4.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (active) Color(0xFFFF5252) else MaterialTheme.colorScheme.surfaceVariant
+                                )
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(10.dp)
-                                        .background(if (active) Color.White else Color(0xFF546E7A), CircleShape)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "$inp (${if (active) "۱" else "۰"})",
-                                    color = if (active) Color.Black else Color.White,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp
-                                )
-                            }
-                        }
-                    }
-
-                    val outputList = listOf("Q0.0", "Q0.1", "Q0.2")
-                    items(outputList) { out ->
-                        val active = plcMemory.outputs[out] ?: false
-                        Card(
-                            shape = RoundedCornerShape(8.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (active) Color(0xFFFF5252) else Color(0xFF1E2838)
-                            ),
-                            modifier = Modifier.semantics { contentDescription = "خروجی PLC $out: ${if (active) "فعال" else "غیرفعال"}" }
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(10.dp)
-                                        .background(if (active) Color.White else Color(0xFF455A64), CircleShape)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "$out (${if (active) "روشن" else "خاموش"})",
-                                    color = if (active) Color.White else Color.Blue,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // ۲. نوار ابزار پالت نمادهای استاندارد PLC (PLC Ladder Symbols Palette)
-        Surface(
-            color = Color(0xFF0F1724),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(width = 1.dp, color = Color(0xFF1B283C))
-        ) {
-            Column(modifier = Modifier.padding(vertical = 8.dp, horizontal = 10.dp)) {
-                Text(
-                    text = "پالت نمادهای استاندارد PLC — نماد را انتخاب و روی بوم قرار دهید:",
-                    color = Color(0xFF80D8FF),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 11.sp
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(toolsList) { tool ->
-                        val isSelected = activeToolItem == tool
-                        val itemBg = if (isSelected) Color(0xFF00E5FF).copy(alpha = 0.25f) else Color(0xFF162030)
-                        val itemBorder = if (isSelected) Color(0xFF00E5FF) else Color(0xFF29394D)
-
-                        Card(
-                            shape = RoundedCornerShape(8.dp),
-                            colors = CardDefaults.cardColors(containerColor = itemBg),
-                            border = androidx.compose.foundation.BorderStroke(1.5.dp, itemBorder),
-                            modifier = Modifier
-                                .clickable {
-                                    activeToolItem = if (isSelected) null else tool
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .background(if (active) Color.White else MaterialTheme.colorScheme.outline, CircleShape)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "$out (${if (active) "روشن" else "خاموش"})",
+                                        color = if (active) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 9.sp
+                                    )
                                 }
-                                .semantics { contentDescription = "ابزار ${tool.title}" }
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                            ) {
-                                Text(
-                                    text = tool.symbolDisplay,
-                                    fontFamily = FontFamily.Monospace,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp,
-                                    color = if (isSelected) Color(0xFF00E5FF) else Color(0xFFFFD600)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = tool.title,
-                                    fontSize = 11.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) Color.White else Color(0xFFCFD8DC)
-                                )
                             }
                         }
                     }
                 }
+            }
 
-                // راهنمای ابزار انتخابی فعال
-                AnimatedVisibility(visible = activeToolItem != null && activeToolItem?.type != null) {
-                    val activeTool = activeToolItem!!
-                    Surface(
-                        color = Color(0xFF00E5FF).copy(alpha = 0.12f),
-                        shape = RoundedCornerShape(6.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp)
+            // ۲. نوار ابزار پالت نمادهای استاندارد PLC (فشرده‌شده)
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(width = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+            ) {
+                Column(modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp)) {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Outlined.TouchApp,
-                                    contentDescription = null,
-                                    tint = Color(0xFF00E5FF),
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "نماد فعال: «${activeTool.title}» — روی اسلات (+) رانگ تپ کنید تا اضافه شود.",
-                                    color = Color(0xFF80D8FF),
-                                    fontSize = 11.sp
-                                )
-                            }
+                        items(toolsList) { tool ->
+                            val isSelected = activeToolItem == tool
+                            val itemBg = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface
+                            val itemBorder = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
 
-                            IconButton(
-                                onClick = { activeToolItem = null },
-                                modifier = Modifier.size(20.dp)
+                            Card(
+                                shape = RoundedCornerShape(4.dp),
+                                colors = CardDefaults.cardColors(containerColor = itemBg),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, itemBorder),
+                                modifier = Modifier
+                                    .clickable { activeToolItem = if (isSelected) null else tool }
                             ) {
-                                Icon(Icons.Default.Close, contentDescription = "لغو ابزار", tint = Color(0xFF90A4AE), modifier = Modifier.size(14.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        text = tool.symbolDisplay,
+                                        fontFamily = FontFamily.Monospace,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = tool.title,
+                                        fontSize = 10.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    AnimatedVisibility(visible = activeToolItem != null && activeToolItem?.type != null) {
+                        val activeTool = activeToolItem!!
+                        Surface(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(4.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.TouchApp,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "فعال: «${activeTool.title}» — روی اسلات (+) تپ کنید.",
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontSize = 10.sp
+                                    )
+                                }
+                                IconButton(
+                                    onClick = { activeToolItem = null },
+                                    modifier = Modifier.size(20.dp)
+                                ) {
+                                    Icon(Icons.Default.Close, contentDescription = "لغو", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
+                                }
                             }
                         }
                     }
                 }
             }
         }
-        }
 
-        // ۳. بوم ترسیم نردبانی Ladder Canvas با قابلیت قرار دادن نمادها و اسکرول و بزرگنمایی دو بعدی
+        // ۳. بوم ترسیم نردبانی (فضای بیشتر برای بوم)
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             PlcLadderCanvasView(
                 rungs = rungs,
@@ -486,16 +473,16 @@ fun PlcLadderScreen(
                         type = type,
                         isBranch = branchParam
                     )
-                    Toast.makeText(context, "نماد ${type.symbol} در مدار قرار گرفت", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "نماد ${type.symbol} قرار گرفت", Toast.LENGTH_SHORT).show()
                 },
                 modifier = Modifier.fillMaxSize()
             )
 
             if (isFullscreen) {
                 Surface(
-                    color = Color(0xDD0F1724),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
                     shape = RoundedCornerShape(20.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF00E5FF)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .padding(12.dp)
@@ -507,12 +494,12 @@ fun PlcLadderScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.FullscreenExit,
-                            contentDescription = "خروج از تمام‌صفحه",
-                            tint = Color(0xFF00E5FF),
+                            contentDescription = "خروج",
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("خروج از تمام‌صفحه", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text("خروج از تمام‌صفحه", color = MaterialTheme.colorScheme.onSurface, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -526,13 +513,13 @@ fun PlcLadderScreen(
             title = {
                 Text(
                     text = if (isAddingBranch) "افزودن شاخه موازی خودنگهدار (OR)" else "افزودن المان به رانگ",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
                 )
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("نوع المان استاندارد PLC:", color = Color(0xFF00E5FF), fontSize = 12.sp)
+                    Text("نوع المان استاندارد PLC:", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
 
                     ExposedDropdownMenuBox(
                         expanded = elementDropdownExpanded,
@@ -574,7 +561,7 @@ fun PlcLadderScreen(
                         OutlinedTextField(
                             value = presetInput.toString(),
                             onValueChange = { presetInput = it.toIntOrNull() ?: 5 },
-                            label = { Text("مقدار Preset (ثانیه برای تایمر / عدد برای کانتر)") },
+                            label = { Text("مقدار Preset (ثانیه / عدد)") },
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -593,7 +580,7 @@ fun PlcLadderScreen(
                                 presetValue = presetInput
                             )
                             viewModel.addBranchToRung(selectedRungIdForElement, newBranchElem)
-                            Toast.makeText(context, "شاخه موازی خودنگهدار اضافه شد", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "شاخه موازی اضافه شد", Toast.LENGTH_SHORT).show()
                         } else {
                             viewModel.addElementToLadderRung(selectedRungIdForElement, selectedElementType, addressInput, isContact, presetInput)
                             Toast.makeText(context, "المان اضافه شد", Toast.LENGTH_SHORT).show()
@@ -609,7 +596,7 @@ fun PlcLadderScreen(
                     Text("انصراف")
                 }
             },
-            containerColor = Color(0xFF1E2838)
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 
@@ -618,7 +605,7 @@ fun PlcLadderScreen(
         val elem = editingElement!!
         AlertDialog(
             onDismissRequest = { showEditElementDialog = false },
-            title = { Text("ویرایش المان ${elem.address}", color = Color.White, fontWeight = FontWeight.Bold) },
+            title = { Text("ویرایش المان ${elem.address}", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
@@ -675,7 +662,7 @@ fun PlcLadderScreen(
                             showEditElementDialog = false
                             Toast.makeText(context, "المان حذف شد", Toast.LENGTH_SHORT).show()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF1744))
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                     ) {
                         Text("حذف")
                     }
@@ -695,7 +682,7 @@ fun PlcLadderScreen(
                     Text("انصراف")
                 }
             },
-            containerColor = Color(0xFF1E2838)
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 
